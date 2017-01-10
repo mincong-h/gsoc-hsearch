@@ -40,7 +40,7 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	@Inject
 	@BatchProperty
-	private boolean isJavaSE;
+	private String isJavaSE;
 
 	@Inject
 	@BatchProperty
@@ -65,7 +65,7 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 		try {
 			LOGGER.debug( "Creating entity manager ..." );
-			if ( isJavaSE ) {
+			if ( Boolean.parseBoolean( isJavaSE ) ) {
 				emf = JobSEEnvironment.getInstance().getEntityManagerFactory();
 			}
 			em = emf.createEntityManager();
@@ -82,6 +82,7 @@ public class JobContextSetupListener extends AbstractJobListener {
 			LOGGER.infof( "%d criteria found.", criteria.size() );
 
 			JobContextData jobContextData = new JobContextData();
+			jobContextData.setEntityManagerFactory( emf );
 			jobContextData.setCriteria( criteria );
 			jobContextData.setEntityTypes( entityTypesToIndex );
 			jobContext.setTransientUserData( jobContextData );
@@ -98,7 +99,7 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	@Override
 	public void afterJob() throws Exception {
-		if ( isJavaSE ) {
+		if ( Boolean.parseBoolean( isJavaSE ) ) {
 			JobSEEnvironment.getInstance().setEntityManagerFactory( null );
 		}
 	}

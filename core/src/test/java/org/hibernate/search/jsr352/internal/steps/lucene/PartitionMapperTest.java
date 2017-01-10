@@ -20,7 +20,6 @@ import javax.persistence.Persistence;
 import org.hibernate.search.jsr352.entity.Company;
 import org.hibernate.search.jsr352.entity.Person;
 import org.hibernate.search.jsr352.internal.JobContextData;
-import org.hibernate.search.jsr352.internal.se.JobSEEnvironment;
 import org.hibernate.search.jsr352.internal.steps.lucene.PartitionMapper;
 import org.jboss.logging.Logger;
 import org.junit.After;
@@ -73,8 +72,6 @@ public class PartitionMapperTest {
 			}
 		}
 
-		JobSEEnvironment.getInstance().setEntityManagerFactory( emf );
-		final String isJavaSE = String.valueOf( true );
 		final String fetchSize = String.valueOf( 200 * 1000 );
 		final String hql = null;
 		final String maxThreads = String.valueOf( 1 );
@@ -82,7 +79,6 @@ public class PartitionMapperTest {
 		partitionMapper = new PartitionMapper( null,
 				fetchSize,
 				hql,
-				isJavaSE,
 				rowsPerPartition,
 				maxThreads );
 
@@ -101,6 +97,7 @@ public class PartitionMapperTest {
 
 		// mock job context
 		JobContextData jobData = new JobContextData();
+		jobData.setEntityManagerFactory( emf );
 		jobData.setCriteria( new HashSet<>() );
 		jobData.setEntityTypes( Company.class, Person.class );
 		Mockito.when( mockedJobContext.getTransientUserData() ).thenReturn( jobData );
