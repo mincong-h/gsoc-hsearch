@@ -50,6 +50,8 @@ import org.junit.runners.MethodSorters;
 public class RestartIT {
 
 	private static final Logger LOGGER = Logger.getLogger( RestartIT.class );
+
+	private static final String PU_NAME = "h2";
 	private static final SimpleDateFormat SDF = new SimpleDateFormat( "dd/MM/yyyy" );
 	private static final int DB_DAY1_ROWS = 2000;
 	private static final int DB_DAY2_ROWS = 3000;
@@ -59,7 +61,7 @@ public class RestartIT {
 	@Inject
 	private MessageManager messageManager;
 
-	@PersistenceUnit(unitName = "h2")
+	@PersistenceUnit(unitName = PU_NAME)
 	private EntityManagerFactory emf;
 
 	@Deployment
@@ -94,7 +96,7 @@ public class RestartIT {
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "01/09/2016" ) ).size() );
 
 		// The 1st execution. Keep it alive and wait Byteman to stop it
-		long execId1 = BatchIndexingJob.forEntity( Message.class ).start();
+		long execId1 = BatchIndexingJob.builder( PU_NAME, Message.class ).start();
 		JobExecution jobExec1 = BatchRuntime.getJobOperator().getJobExecution( execId1 );
 		jobExec1 = keepTestAlive( jobExec1 );
 
@@ -123,7 +125,7 @@ public class RestartIT {
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "01/09/2016" ) ).size() );
 
 		// The 1st execution. Keep it alive and wait Byteman to stop it
-		long execId1 = BatchIndexingJob.forEntity( Message.class )
+		long execId1 = BatchIndexingJob.builder( PU_NAME, Message.class )
 				.restrictedBy( Restrictions.ge( "date", SDF.parse( "01/09/2016" ) ) )
 				.start();
 		JobExecution jobExec1 = BatchRuntime.getJobOperator().getJobExecution( execId1 );
@@ -153,7 +155,7 @@ public class RestartIT {
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "31/08/2016" ) ).size() );
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "01/09/2016" ) ).size() );
 
-		long execId1 = BatchIndexingJob.forEntity( Message.class )
+		long execId1 = BatchIndexingJob.builder( PU_NAME, Message.class )
 				.restrictedBy( "select m from Message m where day( m.date ) = 31" )
 				.start();
 		JobExecution jobExec1 = BatchRuntime.getJobOperator().getJobExecution( execId1 );

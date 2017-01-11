@@ -19,11 +19,11 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceUnit;
 
 import org.hibernate.criterion.Criterion;
+import org.hibernate.internal.SessionFactoryRegistry;
+import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jpa.Search;
-import org.hibernate.search.jsr352.internal.se.JobSEEnvironment;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
 import org.jboss.logging.Logger;
 
@@ -40,18 +40,15 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	@Inject
 	@BatchProperty
-	private String isJavaSE;
-
-	@Inject
-	@BatchProperty
 	private String rootEntities;
 
 	@Inject
 	@BatchProperty(name = "criteria")
 	private String serializedCriteria;
 
-	@PersistenceUnit(unitName = "h2")
-	private EntityManagerFactory emf;
+	@Inject
+	@BatchProperty(name = "persistenceUnitName")
+	private String persistenceUnitName;
 
 	@Inject
 	public JobContextSetupListener(JobContext jobContext) {
@@ -60,14 +57,19 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	@Override
 	public void beforeJob() throws Exception {
-
 		EntityManager em = null;
 
 		try {
 			LOGGER.debug( "Creating entity manager ..." );
-			if ( Boolean.parseBoolean( isJavaSE ) ) {
-				emf = JobSEEnvironment.getInstance().getEntityManagerFactory();
+			EntityManagerFactory emf = SessionFactoryRegistry.INSTANCE.findSessionFactory( null, persistenceUnitName );
+
+			if ( emf == null ) {
+				throw new SearchException(
+						"The search factory for persistence unit " + persistenceUnitName + " hasn't been instantiated yet,"
+						+ " or has been instantiated with an unreachable classloader."
+						+ " Make sure to instantiate search factories before you run this job." );
 			}
+
 			em = emf.createEntityManager();
 			List<String> entityNamesToIndex = Arrays.asList( rootEntities.split( "," ) );
 			Set<Class<?>> entityTypesToIndex = Search
@@ -94,13 +96,6 @@ public class JobContextSetupListener extends AbstractJobListener {
 			catch (Exception e) {
 				LOGGER.error( e );
 			}
-		}
-	}
-
-	@Override
-	public void afterJob() throws Exception {
-		if ( Boolean.parseBoolean( isJavaSE ) ) {
-			JobSEEnvironment.getInstance().setEntityManagerFactory( null );
 		}
 	}
 }
