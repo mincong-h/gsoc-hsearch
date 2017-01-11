@@ -19,6 +19,7 @@
     <description>New implementation of mass-indexer using JSR 352</description>
 
     <properties>
+        <javax.batch>1.0</javax.batch>
         <org.jboss.byteman>3.0.6</org.jboss.byteman>
         <org.mockito>1.10.19</org.mockito>
     </properties>
@@ -39,19 +40,14 @@
             <version>3.3.0.Final</version>
         </dependency>
         <dependency>
-            <groupId>org.jboss.spec.javax.batch</groupId>
-            <artifactId>jboss-batch-api_1.0_spec</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.enterprise</groupId>
-            <artifactId>cdi-api</artifactId>
-            <scope>provided</scope>
+            <groupId>javax.batch</groupId>
+            <artifactId>javax.batch-api</artifactId>
+            <version>${javax.batch}</version>
         </dependency>
         <!-- test -->
         <dependency>
