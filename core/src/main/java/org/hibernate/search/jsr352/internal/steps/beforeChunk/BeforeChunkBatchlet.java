@@ -61,7 +61,7 @@ public class BeforeChunkBatchlet extends AbstractBatchlet {
 
 			if ( Boolean.parseBoolean( this.optimizeAfterPurge ) ) {
 				LOGGER.info( "optimizing all entities ..." );
-				ContextHelper.getSearchintegrator( session ).optimize();
+				ContextHelper.getSearchIntegrator( session ).optimize();
 			}
 		}
 		return null;

@@ -49,7 +49,7 @@ public class AfterChunkBatchlet extends AbstractBatchlet {
 			JobContextData jobData = (JobContextData) jobContext.getTransientUserData();
 			EntityManagerFactory emf = jobData.getEntityManagerFactory();
 			session = emf.unwrap( SessionFactory.class ).openSession();
-			ContextHelper.getSearchintegrator( session ).optimize();
+			ContextHelper.getSearchIntegrator( session ).optimize();
 		}
 		return null;
 	}

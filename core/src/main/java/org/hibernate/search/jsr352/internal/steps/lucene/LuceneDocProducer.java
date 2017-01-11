@@ -87,7 +87,7 @@ public class LuceneDocProducer implements ItemProcessor {
 				.getIndexedType( entityName );
 		PartitionContextData partitionData = (PartitionContextData) stepContext.getTransientUserData();
 		session = partitionData.getSession();
-		searchIntegrator = ContextHelper.getSearchintegrator( session );
+		searchIntegrator = ContextHelper.getSearchIntegrator( session );
 		entityIndexBinding = searchIntegrator.getIndexBindings().get( entityType );
 		docBuilder = entityIndexBinding.getDocumentBuilder();
 
@@ -117,7 +117,7 @@ public class LuceneDocProducer implements ItemProcessor {
 		Serializable id = (Serializable) emf.getPersistenceUnitUtil()
 				.getIdentifier( entity );
 		TwoWayFieldBridge idBridge = docBuilder.getIdBridge();
-		conversionContext.pushProperty( docBuilder.getIdKeywordName() );
+		conversionContext.pushIdentifierProperty();
 		String idInString = null;
 		try {
 			idInString = conversionContext
