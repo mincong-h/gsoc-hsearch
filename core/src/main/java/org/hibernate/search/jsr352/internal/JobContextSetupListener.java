@@ -19,10 +19,11 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceUnit;
 
+import org.hibernate.criterion.Criterion;
+import org.hibernate.internal.SessionFactoryRegistry;
+import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jpa.Search;
-import org.hibernate.search.jsr352.internal.se.JobSEEnvironment;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
 import org.jboss.logging.Logger;
 
@@ -39,18 +40,15 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	@Inject
 	@BatchProperty
-	private boolean isJavaSE;
-
-	@Inject
-	@BatchProperty
 	private String rootEntities;
 
 	@Inject
-	@BatchProperty(name = "jobContextData")
-	private String serializedJobContextData;
+	@BatchProperty(name = "criteria")
+	private String serializedCriteria;
 
-	@PersistenceUnit(unitName = "h2")
-	private EntityManagerFactory emf;
+	@Inject
+	@BatchProperty(name = "persistenceUnitName")
+	private String persistenceUnitName;
 
 	@Inject
 	public JobContextSetupListener(JobContext jobContext) {
@@ -59,14 +57,19 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	@Override
 	public void beforeJob() throws Exception {
-
 		EntityManager em = null;
 
 		try {
 			LOGGER.debug( "Creating entity manager ..." );
-			if ( isJavaSE ) {
-				emf = JobSEEnvironment.getInstance().getEntityManagerFactory();
+			EntityManagerFactory emf = SessionFactoryRegistry.INSTANCE.findSessionFactory( null, persistenceUnitName );
+
+			if ( emf == null ) {
+				throw new SearchException(
+						"The search factory for persistence unit " + persistenceUnitName + " hasn't been instantiated yet,"
+						+ " or has been instantiated with an unreachable classloader."
+						+ " Make sure to instantiate search factories before you run this job." );
 			}
+
 			em = emf.createEntityManager();
 			List<String> entityNamesToIndex = Arrays.asList( rootEntities.split( "," ) );
 			Set<Class<?>> entityTypesToIndex = Search
@@ -77,9 +80,12 @@ public class JobContextSetupListener extends AbstractJobListener {
 					.filter( clz -> entityNamesToIndex.contains( clz.getName() ) )
 					.collect( Collectors.toCollection( HashSet::new ) );
 
-			JobContextData jobContextData = MassIndexerUtil
-					.deserializeJobContextData( serializedJobContextData );
-			LOGGER.infof( "%d criterions found.", jobContextData.getCriterions().size() );
+			Set<Criterion> criteria = MassIndexerUtil.deserializeCriteria( serializedCriteria );
+			LOGGER.infof( "%d criteria found.", criteria.size() );
+
+			JobContextData jobContextData = new JobContextData();
+			jobContextData.setEntityManagerFactory( emf );
+			jobContextData.setCriteria( criteria );
 			jobContextData.setEntityTypes( entityTypesToIndex );
 			jobContext.setTransientUserData( jobContextData );
 		}
@@ -90,13 +96,6 @@ public class JobContextSetupListener extends AbstractJobListener {
 			catch (Exception e) {
 				LOGGER.error( e );
 			}
-		}
-	}
-
-	@Override
-	public void afterJob() throws Exception {
-		if ( isJavaSE ) {
-			JobSEEnvironment.getInstance().setEntityManagerFactory( null );
 		}
 	}
 }

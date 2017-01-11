@@ -6,20 +6,17 @@
  */
 package org.hibernate.search.jsr352.internal.steps.lucene;
 
-import javax.batch.api.BatchProperty;
 import javax.batch.api.listener.AbstractStepListener;
 import javax.batch.runtime.context.JobContext;
 import javax.batch.runtime.context.StepContext;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceUnit;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Projections;
 import org.hibernate.search.jsr352.internal.JobContextData;
-import org.hibernate.search.jsr352.internal.se.JobSEEnvironment;
 import org.jboss.logging.Logger;
 
 /**
@@ -34,11 +31,6 @@ public class StepProgressSetupListener extends AbstractStepListener {
 	private final JobContext jobContext;
 	private final StepContext stepContext;
 
-	@Inject
-	@BatchProperty
-	private String isJavaSE;
-
-	@PersistenceUnit(unitName = "h2")
 	private EntityManagerFactory emf;
 
 	@Inject
@@ -66,9 +58,7 @@ public class StepProgressSetupListener extends AbstractStepListener {
 			SessionFactory sessionFactory = null;
 			Session session = null;
 			try {
-				if ( Boolean.parseBoolean( isJavaSE ) ) {
-					emf = JobSEEnvironment.getInstance().getEntityManagerFactory();
-				}
+				emf = jobData.getEntityManagerFactory();
 				sessionFactory = emf.unwrap( SessionFactory.class );
 				session = sessionFactory.openSession();
 				for ( Class<?> entityType : jobData.getEntityTypes() ) {

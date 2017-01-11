@@ -15,10 +15,11 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.batch.operations.JobOperator;
-import javax.persistence.EntityManagerFactory;
 
+import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.internal.SessionFactoryRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,6 +34,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class BatchIndexingJobTest {
 
+	private static final String PU_NAME = "h2";
 	private static final boolean OPTIMIZE_AFTER_PURGE = true;
 	private static final boolean OPTIMIZE_AT_END = true;
 	private static final boolean PURGE_AT_START = true;
@@ -45,21 +47,22 @@ public class BatchIndexingJobTest {
 	private JobOperator mockedOperator;
 
 	@Mock
-	private EntityManagerFactory mockedEMF;
+	private SessionFactory mockedEMF;
 
 	@Before
 	public void setUp() {
 		Mockito.when( mockedOperator.start( Mockito.anyString(), Mockito.any( Properties.class ) ) )
 				.thenReturn( 1L );
 		Mockito.when( mockedEMF.isOpen() ).thenReturn( true );
+		SessionFactoryRegistry.INSTANCE.addSessionFactory( "-1" /* uuid */, PU_NAME, false, mockedEMF, null );
 	}
 
 	@Test
 	public void testJobParamsAll() throws IOException {
 
 		ArgumentCaptor<Properties> propsCaptor = ArgumentCaptor.forClass( Properties.class );
-		long executionID = BatchIndexingJob.forEntities( String.class, Integer.class )
-				.underJavaSE( mockedEMF, mockedOperator )
+		long executionID = BatchIndexingJob.builder( PU_NAME, String.class, Integer.class )
+				.underJavaSE( mockedOperator )
 				.fetchSize( FETCH_SIZE )
 				.maxResults( MAX_RESULTS )
 				.maxThreads( MAX_THREADS )
@@ -92,8 +95,8 @@ public class BatchIndexingJobTest {
 	public void testForEntities_notNull() throws IOException {
 
 		ArgumentCaptor<Properties> propsCaptor = ArgumentCaptor.forClass( Properties.class );
-		long executionID = BatchIndexingJob.forEntities( Integer.class, String.class )
-				.underJavaSE( mockedEMF, mockedOperator )
+		long executionID = BatchIndexingJob.builder( PU_NAME, Integer.class, String.class )
+				.underJavaSE( mockedOperator )
 				.start();
 		assertEquals( 1L, executionID );
 
@@ -110,8 +113,8 @@ public class BatchIndexingJobTest {
 	public void testForEntity_notNull() throws IOException {
 
 		ArgumentCaptor<Properties> propsCaptor = ArgumentCaptor.forClass( Properties.class );
-		long executionID = BatchIndexingJob.forEntity( Integer.class )
-				.underJavaSE( mockedEMF, mockedOperator )
+		long executionID = BatchIndexingJob.builder( PU_NAME, Integer.class )
+				.underJavaSE( mockedOperator )
 				.start();
 		assertEquals( 1L, executionID );
 
@@ -123,24 +126,29 @@ public class BatchIndexingJobTest {
 		assertTrue( entityNames.contains( Integer.class.getName() ) );
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testForEntity_null() {
-		BatchIndexingJob.forEntity( null );
+		BatchIndexingJob.builder( PU_NAME, null );
 	}
 
-	@Test(expected = NullPointerException.class)
-	public void testForEntitiy_null() {
-		BatchIndexingJob.forEntities( null );
+	@Test(expected = IllegalArgumentException.class)
+	public void testForPersistenceUnitName_null() {
+		BatchIndexingJob.builder( null, Integer.class );
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void testForPersistenceUnitName_empty() {
+		BatchIndexingJob.builder( "", Integer.class );
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testRestrictedBy_stringNull() {
-		BatchIndexingJob.forEntity( String.class ).restrictedBy( (String) null );
+		BatchIndexingJob.builder( PU_NAME, String.class ).restrictedBy( (String) null );
 	}
 
 	@Test(expected = NullPointerException.class)
 	public void testRestrictedBy_criterionNull() {
-		BatchIndexingJob.forEntity( String.class ).restrictedBy( (Criterion) null );
+		BatchIndexingJob.builder( PU_NAME, String.class ).restrictedBy( (Criterion) null );
 	}
 
 	/**
@@ -149,7 +157,7 @@ public class BatchIndexingJobTest {
 	 */
 	@Test(expected = IllegalArgumentException.class)
 	public void testRestrictedBy_twoRestrictionTypes() {
-		BatchIndexingJob.forEntity( String.class )
+		BatchIndexingJob.builder( PU_NAME, String.class )
 				.restrictedBy( "from string" )
 				.restrictedBy( Restrictions.isEmpty( "dummy" ) );
 	}

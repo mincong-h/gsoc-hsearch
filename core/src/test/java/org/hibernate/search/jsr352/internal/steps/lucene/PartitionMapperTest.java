@@ -20,7 +20,6 @@ import javax.persistence.Persistence;
 import org.hibernate.search.jsr352.entity.Company;
 import org.hibernate.search.jsr352.entity.Person;
 import org.hibernate.search.jsr352.internal.JobContextData;
-import org.hibernate.search.jsr352.internal.se.JobSEEnvironment;
 import org.hibernate.search.jsr352.internal.steps.lucene.PartitionMapper;
 import org.jboss.logging.Logger;
 import org.junit.After;
@@ -39,8 +38,11 @@ import org.mockito.MockitoAnnotations;
 public class PartitionMapperTest {
 
 	private static final Logger LOGGER = Logger.getLogger( PartitionMapperTest.class );
+
+	private static final String PU_NAME = "h2";
 	private static final int COMP_ROWS = 3;
 	private static final int PERS_ROWS = 8;
+
 	private EntityManagerFactory emf;
 
 	@Mock
@@ -53,7 +55,7 @@ public class PartitionMapperTest {
 	public void setUp() {
 		EntityManager em = null;
 		try {
-			emf = Persistence.createEntityManagerFactory( "h2" );
+			emf = Persistence.createEntityManagerFactory( PU_NAME );
 			em = emf.createEntityManager();
 			em.getTransaction().begin();
 			for ( int i = 1; i <= COMP_ROWS; i++ ) {
@@ -73,8 +75,6 @@ public class PartitionMapperTest {
 			}
 		}
 
-		JobSEEnvironment.getInstance().setEntityManagerFactory( emf );
-		final String isJavaSE = String.valueOf( true );
 		final String fetchSize = String.valueOf( 200 * 1000 );
 		final String hql = null;
 		final String maxThreads = String.valueOf( 1 );
@@ -82,7 +82,6 @@ public class PartitionMapperTest {
 		partitionMapper = new PartitionMapper( null,
 				fetchSize,
 				hql,
-				isJavaSE,
 				rowsPerPartition,
 				maxThreads );
 
@@ -101,7 +100,8 @@ public class PartitionMapperTest {
 
 		// mock job context
 		JobContextData jobData = new JobContextData();
-		jobData.setCriterions( new HashSet<>() );
+		jobData.setEntityManagerFactory( emf );
+		jobData.setCriteria( new HashSet<>() );
 		jobData.setEntityTypes( Company.class, Person.class );
 		Mockito.when( mockedJobContext.getTransientUserData() ).thenReturn( jobData );
 

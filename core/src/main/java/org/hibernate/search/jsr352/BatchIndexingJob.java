@@ -14,12 +14,10 @@ import java.util.stream.Collectors;
 
 import javax.batch.operations.JobOperator;
 import javax.batch.runtime.BatchRuntime;
-import javax.persistence.EntityManagerFactory;
 
 import org.hibernate.criterion.Criterion;
-import org.hibernate.search.jsr352.internal.JobContextData;
-import org.hibernate.search.jsr352.internal.se.JobSEEnvironment;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
+import org.hibernate.search.util.StringHelper;
 
 /**
  * An alternative to the current mass indexer, using the Java Batch architecture as defined by JSR 352.
@@ -30,12 +28,12 @@ public class BatchIndexingJob {
 
 	public static final String JOB_NAME = "BatchIndexingJob";
 
-	public static Builder forEntity(Class<?> rootEntity) {
-		return new Builder( rootEntity );
+	public static Builder builder(String persistenceUnitName, Class<?> rootEntity) {
+		return new Builder( persistenceUnitName, rootEntity );
 	}
 
-	public static Builder forEntities(Class<?> rootEntity, Class<?>... rootEntities) {
-		return new Builder( rootEntity, rootEntities );
+	public static Builder builder(String persistenceUnitName, Class<?> rootEntity, Class<?>... rootEntities) {
+		return new Builder( persistenceUnitName, rootEntity, rootEntities );
 	}
 
 	/**
@@ -56,25 +54,19 @@ public class BatchIndexingJob {
 	 * @param jobOperatorSE
 	 * @return
 	 */
-	public static long restart(long executionId, EntityManagerFactory entityManagerFactorySE,
-			JobOperator jobOperatorSE) {
-		if ( entityManagerFactorySE == null ) {
-			throw new NullPointerException( "You're under a Java SE environment. "
-					+ "Please assign the EntityManagerFactory before the job start." );
-		}
+	public static long restart(long executionId, JobOperator jobOperatorSE) {
 		if ( jobOperatorSE == null ) {
 			throw new NullPointerException( "You're under a Java SE environment. "
 					+ "Please assign the jobOperator before the job start." );
 		}
-		JobSEEnvironment.getInstance().setEntityManagerFactory( entityManagerFactorySE );
 		return jobOperatorSE.restart( executionId, null );
 	}
 
 	public static class Builder {
 
+		private final String persistenceUnitName;
 		private final Set<Class<?>> rootEntities;
 		private boolean cacheable = false;
-		private boolean isJavaSE = false;
 		private boolean optimizeAfterPurge = false;
 		private boolean optimizeAtEnd = false;
 		private boolean purgeAtStart = false;
@@ -84,19 +76,23 @@ public class BatchIndexingJob {
 		private int rowsPerPartition = 250;
 		private int maxThreads = 1;
 		private JobOperator jobOperator;
-		private Set<Criterion> criterions;
+		private Set<Criterion> criteria;
 		private String hql;
 
-		private Builder(Class<?> rootEntity, Class<?>... rootEntities) {
+		private Builder(String persistenceUnitName, Class<?> rootEntity, Class<?>... rootEntities) {
+			if ( StringHelper.isEmpty( persistenceUnitName ) ) {
+				throw new IllegalArgumentException( "persistenceUnitName must be a non-empty string" );
+			}
+			this.persistenceUnitName = persistenceUnitName;
 			if ( rootEntity == null ) {
-				throw new NullPointerException( "rootEntities must have at least 1 element." );
+				throw new IllegalArgumentException( "rootEntities must have at least 1 element." );
 			}
 			this.rootEntities = new HashSet<>();
 			this.rootEntities.add( rootEntity );
 			for ( Class<?> clz : rootEntities ) {
 				this.rootEntities.add( clz );
 			}
-			criterions = new HashSet<>();
+			criteria = new HashSet<>();
 			hql = "";
 		}
 
@@ -126,23 +122,14 @@ public class BatchIndexingJob {
 		}
 
 		/**
-		 * Configure additional parameters for Java SE: assign the entity manager factory and assign the job operator.
+		 * Configure additional parameters for Java SE: assign the job operator.
 		 * You should NOT use this method if you're under Java EE.
 		 */
-		public Builder underJavaSE(EntityManagerFactory entityManagerFactory,
-				JobOperator jobOperator) {
-			if ( entityManagerFactory == null ) {
-				throw new NullPointerException( "The entityManagerFactory cannot be null." );
-			}
-			else if ( !entityManagerFactory.isOpen() ) {
-				throw new IllegalStateException( "Please provide an open entityManagerFactory." );
-			}
+		public Builder underJavaSE(JobOperator jobOperator) {
 			if ( jobOperator == null ) {
 				throw new NullPointerException( "The jobOperator cannot be null." );
 			}
-			JobSEEnvironment.getInstance().setEntityManagerFactory( entityManagerFactory );
 			this.jobOperator = jobOperator;
-			this.isJavaSE = true;
 			return this;
 		}
 
@@ -243,7 +230,7 @@ public class BatchIndexingJob {
 			if ( criterion == null ) {
 				throw new NullPointerException( "The criterion is null." );
 			}
-			criterions.add( criterion );
+			criteria.add( criterion );
 			return this;
 		}
 
@@ -257,7 +244,7 @@ public class BatchIndexingJob {
 			if ( hql == null ) {
 				throw new NullPointerException( "The HQL is null." );
 			}
-			if ( criterions.size() > 0 ) {
+			if ( criteria.size() > 0 ) {
 				throw new IllegalArgumentException( "Cannot use HQL approach "
 						+ "and Criteria approach in the same time." );
 			}
@@ -289,21 +276,17 @@ public class BatchIndexingJob {
 		public long start() throws IOException {
 
 			Properties jobParams = new Properties();
-			JobContextData jobContextData = new JobContextData();
 
 			// check different variables
-			if ( !isJavaSE ) {
+			if ( jobOperator == null ) {
 				jobOperator = BatchRuntime.getJobOperator();
 			}
 
-			jobContextData.setCriterions( criterions );
-
+			jobParams.put( "persistenceUnitName", persistenceUnitName );
 			jobParams.put( "cacheable", String.valueOf( cacheable ) );
 			jobParams.put( "fetchSize", String.valueOf( fetchSize ) );
 			jobParams.put( "hql", hql );
-			jobParams.put( "isJavaSE", String.valueOf( isJavaSE ) );
 			jobParams.put( "itemCount", String.valueOf( itemCount ) );
-			jobParams.put( "jobContextData", MassIndexerUtil.serialize( jobContextData ) );
 			jobParams.put( "maxResults", String.valueOf( maxResults ) );
 			jobParams.put( "maxThreads", String.valueOf( maxThreads ) );
 			jobParams.put( "optimizeAfterPurge", String.valueOf( optimizeAfterPurge ) );
@@ -311,6 +294,9 @@ public class BatchIndexingJob {
 			jobParams.put( "purgeAtStart", String.valueOf( purgeAtStart ) );
 			jobParams.put( "rootEntities", getRootEntitiesAsString() );
 			jobParams.put( "rowsPerPartition", String.valueOf( rowsPerPartition ) );
+			if ( !criteria.isEmpty() ) {
+				jobParams.put( "criteria", MassIndexerUtil.serializeCriteria( criteria ) );
+			}
 			long executionId = jobOperator.start( JOB_NAME, jobParams );
 			return executionId;
 		}

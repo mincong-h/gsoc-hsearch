@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.persistence.EntityManagerFactory;
+
 import org.hibernate.criterion.Criterion;
 import org.hibernate.search.jsr352.internal.util.PartitionBound;
 
@@ -26,6 +28,8 @@ import org.hibernate.search.jsr352.internal.util.PartitionBound;
 public class JobContextData implements Serializable {
 
 	private static final long serialVersionUID = 4465274690302894983L;
+
+	private EntityManagerFactory entityManagerFactory;
 
 	/**
 	 * The map of key value pair (string, class-type), designed for storage of name and class type of all root entities.
@@ -44,10 +48,18 @@ public class JobContextData implements Serializable {
 	 */
 	private List<PartitionBound> partitionBounds;
 
-	private Set<Criterion> criterions;
+	private Set<Criterion> criteria;
 
 	public JobContextData() {
 		entityTypeMap = new HashMap<>();
+	}
+
+	public EntityManagerFactory getEntityManagerFactory() {
+		return entityManagerFactory;
+	}
+
+	public void setEntityManagerFactory(EntityManagerFactory entityManagerFactory) {
+		this.entityManagerFactory = entityManagerFactory;
 	}
 
 	public void setEntityTypes(Collection<Class<?>> entityTypes) {
@@ -78,8 +90,8 @@ public class JobContextData implements Serializable {
 		return totalEntityToIndex;
 	}
 
-	public Set<Criterion> getCriterions() {
-		return criterions;
+	public Set<Criterion> getCriteria() {
+		return criteria;
 	}
 
 	public void setTotalEntityToIndex(long totalEntityToIndex) {
@@ -103,13 +115,20 @@ public class JobContextData implements Serializable {
 		return partitionBounds.get( partitionId );
 	}
 
-	public void setCriterions(Set<Criterion> criterions) {
-		this.criterions = criterions;
+	public void setCriteria(Set<Criterion> criteria) {
+		this.criteria = criteria;
 	}
 
 	@Override
 	public String toString() {
-		return "JobContextData [entityTypeMap=" + entityTypeMap + ", totalEntityToIndex=" + totalEntityToIndex + ", partitionBounds=" + partitionBounds
-				+ ", criterions=" + criterions + "]";
+		return new StringBuilder()
+				.append( "JobContextData [" )
+				.append( "entityManagerFactory=" ).append( entityManagerFactory )
+				.append( ", entityTypeMap=" ).append( entityTypeMap )
+				.append( ", totalEntityToIndex=" ).append( totalEntityToIndex )
+				.append( ", partitionBounds=" ).append( partitionBounds )
+				.append( ", criteria=" ).append( criteria )
+				.append( "]" )
+				.toString();
 	}
 }
