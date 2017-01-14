@@ -47,8 +47,8 @@
         <dependency>
             <groupId>javax.batch</groupId>
             <artifactId>javax.batch-api</artifactId>
-            <version>${javax.batch}</version>
         </dependency>
+
         <!-- test -->
         <dependency>
             <groupId>junit</groupId>

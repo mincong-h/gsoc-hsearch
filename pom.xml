@@ -93,19 +93,15 @@
                 <version>${org.hibernate.search}</version>
             </dependency>
             <dependency>
-                <groupId>org.jboss.spec.javax.batch</groupId>
-                <artifactId>jboss-batch-api_1.0_spec</artifactId>
-                <version>1.0.0.Final</version>
+                <groupId>javax.batch</groupId>
+                <artifactId>javax.batch-api</artifactId>
+                <version>1.0</version>
             </dependency>
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
                 <version>1</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.enterprise</groupId>
-                <artifactId>cdi-api</artifactId>
-                <version>1.1</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.hibernate.javax.persistence</groupId>
