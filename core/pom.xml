@@ -19,9 +19,7 @@
     <description>New implementation of mass-indexer using JSR 352</description>
 
     <properties>
-        <javax.batch>1.0</javax.batch>
         <org.jboss.byteman>3.0.6</org.jboss.byteman>
-        <org.mockito>1.10.19</org.mockito>
     </properties>
 
     <dependencies>
@@ -37,7 +35,6 @@
         <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
-            <version>3.3.0.Final</version>
         </dependency>
         <dependency>
             <groupId>javax.inject</groupId>
@@ -57,13 +54,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
-            <version>${org.mockito}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-entitymanager</artifactId>
-            <version>${org.hibernate}</version>
             <scope>test</scope>
         </dependency>
 
