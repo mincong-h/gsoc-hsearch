@@ -27,7 +27,7 @@ import org.jboss.ejb3.annotation.TransactionTimeout;
 @Stateless
 public class PersonManager {
 
-	@PersistenceContext(name = "h2")
+	@PersistenceContext(unitName = "h2")
 	private EntityManager em;
 
 	@TransactionTimeout(value = 5, unit = TimeUnit.MINUTES)
