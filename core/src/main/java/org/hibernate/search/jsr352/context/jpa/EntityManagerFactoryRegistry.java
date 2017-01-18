@@ -14,7 +14,7 @@ import javax.persistence.EntityManagerFactory;
  *
  * @author Yoann Rodiere
  */
-public interface EntityManagerFactoryProvider {
+public interface EntityManagerFactoryRegistry {
 
 	/**
 	 * @return The default {@link EntityManagerFactory}.

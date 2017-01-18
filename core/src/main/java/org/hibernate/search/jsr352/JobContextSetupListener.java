@@ -26,7 +26,7 @@ import org.hibernate.criterion.Criterion;
 import org.hibernate.internal.SessionFactoryRegistry;
 import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jpa.Search;
-import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryProvider;
+import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
 import org.hibernate.search.jsr352.internal.JobContextData;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
 import org.hibernate.search.util.StringHelper;
@@ -41,8 +41,14 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	private static final Logger LOGGER = Logger.getLogger( JobContextSetupListener.class );
 
+	private static final String SESSION_FACTORY_NAME_SCOPE_NAME = "session-factory-name";
+
 	@Inject
 	private JobContext jobContext;
+
+	@Inject
+	@BatchProperty
+	private String entityManagerFactoryScope;
 
 	@Inject
 	@BatchProperty
@@ -64,10 +70,17 @@ public class JobContextSetupListener extends AbstractJobListener {
 	/**
 	 * Method to be overridden to retrieve the entity manager factory by different means (CDI, Spring DI, ...).
 	 *
-	 * @return The entity manager factory provider used to convert the entity manager factory reference to an actual instance.
+	 * @param scopeName The scope chosen in the job parameters. This allows to pick a specific registry.
+	 * @return The entity manager factory registry used to convert the entity manager factory reference to an actual instance.
 	 */
-	protected EntityManagerFactoryProvider getEntityManagerFactoryProvider() {
-		return new HibernateRegistryEntityManagerFactoryProvider();
+	protected EntityManagerFactoryRegistry getEntityManagerFactoryRegistry(String scopeName) {
+		if ( StringHelper.isEmpty( scopeName ) || SESSION_FACTORY_NAME_SCOPE_NAME.equals( scopeName ) ) {
+			return new HibernateRegistryEntityManagerFactoryRegistry();
+		}
+		else {
+			throw new SearchException( "Unknown entity manager factory registry: '" + scopeName + "'."
+					+ " Please use the name of a supported registry." );
+		}
 	}
 
 	private void setUpContext() throws ClassNotFoundException, IOException {
@@ -76,7 +89,8 @@ public class JobContextSetupListener extends AbstractJobListener {
 		try {
 			LOGGER.debug( "Creating entity manager ..." );
 
-			EntityManagerFactoryProvider entityManagerFactoryProvider = getEntityManagerFactoryProvider();
+			EntityManagerFactoryRegistry entityManagerFactoryProvider =
+					getEntityManagerFactoryRegistry( entityManagerFactoryScope );
 
 			EntityManagerFactory emf;
 			if ( StringHelper.isEmpty( entityManagerFactoryReference ) ) {
@@ -115,12 +129,12 @@ public class JobContextSetupListener extends AbstractJobListener {
 	}
 
 	/**
-	 * An {@link EntityManagerFactoryProvider} that retrieves the entity manager factory
+	 * An {@link EntityManagerFactoryRegistry} that retrieves the entity manager factory
 	 * from the internal Hibernate registry.
 	 *
 	 * @author Yoann Rodiere
 	 */
-	private static final class HibernateRegistryEntityManagerFactoryProvider implements EntityManagerFactoryProvider {
+	private static final class HibernateRegistryEntityManagerFactoryRegistry implements EntityManagerFactoryRegistry {
 
 		@Override
 		public EntityManagerFactory get(String reference) {

@@ -14,10 +14,10 @@ import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceUnit;
 
-import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryProvider;
+import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
 
 /**
- * An {@link EntityManagerFactoryProvider} that retrieves the entity manager factory
+ * An {@link EntityManagerFactoryRegistry} that retrieves the entity manager factory
  * from the CDI context.
  * <p>
  * When calling {@link #get(String)}, the reference will be interpreted as a
@@ -26,7 +26,7 @@ import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryProvider;
  * @author Yoann Rodiere
  */
 @Singleton
-public class CDIEntityManagerFactoryProvider implements EntityManagerFactoryProvider {
+public class CDIBeanNameEntityManagerFactoryRegistry implements EntityManagerFactoryRegistry {
 
 	@PersistenceUnit
 	private EntityManagerFactory defaultInstance;

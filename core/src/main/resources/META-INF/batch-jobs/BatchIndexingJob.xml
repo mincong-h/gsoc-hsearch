@@ -18,6 +18,7 @@
          -->
         <listener ref="org.hibernate.search.jsr352.JobContextSetupListener">
             <properties>
+                <property name="entityManagerFactoryScope" value="#{jobParameters['entityManagerFactoryScope']}" />
                 <property name="entityManagerFactoryReference" value="#{jobParameters['entityManagerFactoryReference']}" />
                 <property name="rootEntities" value="#{jobParameters['rootEntities']}" />
                 <property name="criteria" value="#{jobParameters['criteria']}" />

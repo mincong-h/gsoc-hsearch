@@ -10,8 +10,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.hibernate.search.jsr352.JobContextSetupListener;
-import org.hibernate.search.jsr352.cdi.internal.context.jpa.CDIEntityManagerFactoryProvider;
-import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryProvider;
+import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
+import org.hibernate.search.util.StringHelper;
 
 /**
  * @author Yoann Rodiere
@@ -19,12 +19,17 @@ import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryProvider;
 @Named("org.hibernate.search.jsr352.JobContextSetupListener")
 public class CDIJobContextSetupListener extends JobContextSetupListener {
 
+	private static final String BEAN_NAME_SCOPE_NAME = "bean-name";
+
 	@Inject
-	private CDIEntityManagerFactoryProvider entityManagerFactoryProvider;
+	private EntityManagerFactoryRegistry entityManagerFactoryRegistry;
 
 	@Override
-	protected EntityManagerFactoryProvider getEntityManagerFactoryProvider() {
-		return entityManagerFactoryProvider;
+	protected EntityManagerFactoryRegistry getEntityManagerFactoryRegistry(String scopeName) {
+		if ( StringHelper.isEmpty( scopeName ) || BEAN_NAME_SCOPE_NAME.equals( scopeName ) ) {
+			return entityManagerFactoryRegistry;
+		}
+		return super.getEntityManagerFactoryRegistry( scopeName );
 	}
 
 }

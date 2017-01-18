@@ -64,6 +64,7 @@ public class BatchIndexingJob {
 	public static class Builder {
 
 		private final Set<Class<?>> rootEntities;
+		private String entityManagerFactoryScope;
 		private String entityManagerFactoryReference;
 		private boolean cacheable = false;
 		private boolean optimizeAfterPurge = false;
@@ -91,8 +92,13 @@ public class BatchIndexingJob {
 			hql = "";
 		}
 
-		public Builder entityManagerFactoryReference(String entityManagerFactoryReference) {
-			this.entityManagerFactoryReference = entityManagerFactoryReference;
+		public Builder entityManagerFactoryScope(String scope) {
+			this.entityManagerFactoryScope = scope;
+			return this;
+		}
+
+		public Builder entityManagerFactoryReference(String reference) {
+			this.entityManagerFactoryReference = reference;
 			return this;
 		}
 
@@ -282,6 +288,9 @@ public class BatchIndexingJob {
 				jobOperator = BatchRuntime.getJobOperator();
 			}
 
+			if ( entityManagerFactoryScope != null ) {
+				jobParams.put( "entityManagerFactoryScope", entityManagerFactoryScope );
+			}
 			if ( entityManagerFactoryReference != null ) {
 				jobParams.put( "entityManagerFactoryReference", entityManagerFactoryReference );
 			}
