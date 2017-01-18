@@ -10,5 +10,5 @@
          This batch artifact is defined in the batch.xml so that it can
          be overridden when using a dependency injection mechanism
      -->
-    <ref id="hibernateSearchBatchIndexingJobContextSetupListener" class="org.hibernate.search.jsr352.internal.JobContextSetupListener" />
+    <ref id="hibernateSearchBatchIndexingJobContextSetupListener" class="org.hibernate.search.jsr352.JobContextSetupListener" />
 </batch-artifacts>

@@ -9,9 +9,9 @@ package org.hibernate.search.jsr352.cdi.internal;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.hibernate.search.jsr352.JobContextSetupListener;
 import org.hibernate.search.jsr352.cdi.internal.context.jpa.CDIEntityManagerFactoryProvider;
 import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryProvider;
-import org.hibernate.search.jsr352.internal.JobContextSetupListener;
 
 /**
  * @author Yoann Rodiere

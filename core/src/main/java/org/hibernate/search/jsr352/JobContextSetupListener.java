@@ -4,7 +4,7 @@
  * License: GNU Lesser General Public License (LGPL), version 2.1 or later
  * See the lgpl.txt file in the root directory or <http://www.gnu.org/licenses/lgpl-2.1.html>.
  */
-package org.hibernate.search.jsr352.internal;
+package org.hibernate.search.jsr352;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -27,6 +27,7 @@ import org.hibernate.internal.SessionFactoryRegistry;
 import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jpa.Search;
 import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryProvider;
+import org.hibernate.search.jsr352.internal.JobContextData;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
 import org.hibernate.search.util.StringHelper;
 import org.jboss.logging.Logger;
