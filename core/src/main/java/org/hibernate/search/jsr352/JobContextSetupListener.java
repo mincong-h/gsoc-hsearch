@@ -25,6 +25,7 @@ import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jpa.Search;
 import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
 import org.hibernate.search.jsr352.context.jpa.internal.SessionFactoryNameRegistry;
+import org.hibernate.search.jsr352.context.jpa.internal.SessionFactoryPersistenceUnitNameRegistry;
 import org.hibernate.search.jsr352.internal.JobContextData;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
 import org.hibernate.search.util.StringHelper;
@@ -39,6 +40,7 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	private static final Logger LOGGER = Logger.getLogger( JobContextSetupListener.class );
 
+	private static final String PERSISTENCE_UNIT_NAME_SCOPE_NAME = "persistence-unit-name";
 	private static final String SESSION_FACTORY_NAME_SCOPE_NAME = "session-factory-name";
 
 	@Inject
@@ -72,7 +74,10 @@ public class JobContextSetupListener extends AbstractJobListener {
 	 * @return The entity manager factory registry used to convert the entity manager factory reference to an actual instance.
 	 */
 	protected EntityManagerFactoryRegistry getEntityManagerFactoryRegistry(String scopeName) {
-		if ( StringHelper.isEmpty( scopeName ) || SESSION_FACTORY_NAME_SCOPE_NAME.equals( scopeName ) ) {
+		if ( StringHelper.isEmpty( scopeName ) || PERSISTENCE_UNIT_NAME_SCOPE_NAME.equals( scopeName ) ) {
+			return SessionFactoryPersistenceUnitNameRegistry.getInstance();
+		}
+		else if ( SESSION_FACTORY_NAME_SCOPE_NAME.equals( scopeName ) ) {
 			return SessionFactoryNameRegistry.getInstance();
 		}
 		else {

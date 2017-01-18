@@ -100,11 +100,8 @@ public class BatchIndexingJobIT {
 	}
 
 	@Test
-	public void testMassIndexer_usingAddRootEntities() throws InterruptedException,
+	public void simple() throws InterruptedException,
 			IOException {
-
-		// purge all before start
-		// TODO Can the creation of a new EM and FTEM be avoided?
 		EntityManager em = emf.createEntityManager();
 		FullTextEntityManager ftem = Search.getFullTextEntityManager( em );
 		ftem.purgeAll( Person.class );
@@ -112,9 +109,6 @@ public class BatchIndexingJobIT {
 		ftem.purgeAll( WhoAmI.class );
 		ftem.flushToIndexes();
 		em.close();
-
-		// searches before mass index,
-		// expected no results for each search
 		List<Company> companies = findClass( Company.class, "name", "Google" );
 		List<Person> people = findClass( Person.class, "firstName", "Linus" );
 		List<WhoAmI> whos = findClass( WhoAmI.class, "id", "id01" );
@@ -124,7 +118,7 @@ public class BatchIndexingJobIT {
 
 		JobOperator jobOperator = JobFactory.getJobOperator();
 		long executionId = BatchIndexingJob.forEntities( Company.class, Person.class, WhoAmI.class )
-				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
+				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
 				.underJavaSE( jobOperator )
 				.start();
 		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
@@ -144,7 +138,51 @@ public class BatchIndexingJobIT {
 	}
 
 	@Test
-	public void testMassIndexer_usingCriteria() throws InterruptedException,
+	public void entityManagerFactoryScope_persistenceUnitName() throws InterruptedException,
+			IOException {
+		EntityManager em = emf.createEntityManager();
+		FullTextEntityManager ftem = Search.getFullTextEntityManager( em );
+		ftem.purgeAll( Company.class );
+		List<Company> companies = findClass( Company.class, "name", "Google" );
+		assertEquals( 0, companies.size() );
+
+		JobOperator jobOperator = JobFactory.getJobOperator();
+		long executionId = BatchIndexingJob.forEntities( Company.class )
+				.entityManagerFactoryScope( "persistence-unit-name" )
+				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
+				.underJavaSE( jobOperator )
+				.start();
+		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
+		jobExecution = keepTestAlive( jobExecution );
+
+		companies = findClass( Company.class, "name", "Google" );
+		assertEquals( 1, companies.size() );
+	}
+
+	@Test
+	public void entityManagerFactoryScope_sessionFactoryName() throws InterruptedException,
+			IOException {
+		EntityManager em = emf.createEntityManager();
+		FullTextEntityManager ftem = Search.getFullTextEntityManager( em );
+		ftem.purgeAll( Company.class );
+		List<Company> companies = findClass( Company.class, "name", "Google" );
+		assertEquals( 0, companies.size() );
+
+		JobOperator jobOperator = JobFactory.getJobOperator();
+		long executionId = BatchIndexingJob.forEntities( Company.class )
+				.entityManagerFactoryScope( "session-factory-name" )
+				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
+				.underJavaSE( jobOperator )
+				.start();
+		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
+		jobExecution = keepTestAlive( jobExecution );
+
+		companies = findClass( Company.class, "name", "Google" );
+		assertEquals( 1, companies.size() );
+	}
+
+	@Test
+	public void criteria() throws InterruptedException,
 			IOException {
 
 		// purge all before start
@@ -165,7 +203,7 @@ public class BatchIndexingJobIT {
 		JobOperator jobOperator = JobFactory.getJobOperator();
 		long executionId = BatchIndexingJob.forEntity( Company.class )
 				.restrictedBy( Restrictions.in( "name", "Google", "Red Hat" ) )
-				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
+				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
 				.underJavaSE( jobOperator )
 				.start();
 		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
@@ -177,7 +215,7 @@ public class BatchIndexingJobIT {
 	}
 
 	@Test
-	public void testMassIndexer_usingHQL() throws InterruptedException,
+	public void hql() throws InterruptedException,
 			IOException {
 
 		// purge all before start
@@ -198,7 +236,7 @@ public class BatchIndexingJobIT {
 		JobOperator jobOperator = JobFactory.getJobOperator();
 		long executionId = BatchIndexingJob.forEntity( Company.class )
 				.restrictedBy( "select c from Company c where c.name in ( 'Google', 'Red Hat' )" )
-				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
+				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
 				.underJavaSE( jobOperator )
 				.start();
 		JobExecution jobExecution = jobOperator.getJobExecution( executionId );

@@ -45,7 +45,6 @@ public class RestartChunkIT {
 	private static final Logger LOGGER = Logger.getLogger( RestartChunkIT.class );
 
 	private static final String PERSISTENCE_UNIT_NAME = "h2";
-	private static final String SESSION_FACTORY_NAME = "h2-entityManagerFactory";
 
 	private static final long DB_COMP_ROWS = 100;
 	private static final long DB_PERS_ROWS = 50;
@@ -92,7 +91,7 @@ public class RestartChunkIT {
 
 		// start the job
 		long execId1 = BatchIndexingJob.forEntities( Company.class, Person.class )
-				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
+				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
 				.underJavaSE( jobOperator )
 				.checkpointFreq( 10 )
 				.start();
