@@ -10,7 +10,6 @@ import javax.batch.api.listener.AbstractStepListener;
 import javax.batch.runtime.context.JobContext;
 import javax.batch.runtime.context.StepContext;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.persistence.EntityManagerFactory;
 
 import org.hibernate.Session;
@@ -24,18 +23,15 @@ import org.jboss.logging.Logger;
  *
  * @author Mincong Huang
  */
-@Named
 public class StepProgressSetupListener extends AbstractStepListener {
 
 	private static final Logger LOGGER = Logger.getLogger( StepProgressSetupListener.class );
-	private final JobContext jobContext;
-	private final StepContext stepContext;
 
 	@Inject
-	public StepProgressSetupListener(JobContext jobContext, StepContext stepContext) {
-		this.jobContext = jobContext;
-		this.stepContext = stepContext;
-	}
+	private JobContext jobContext;
+
+	@Inject
+	private StepContext stepContext;
 
 	/**
 	 * Setup the step-level indexing progress. The {@code StepProgress} will be initialized if this is the first start,

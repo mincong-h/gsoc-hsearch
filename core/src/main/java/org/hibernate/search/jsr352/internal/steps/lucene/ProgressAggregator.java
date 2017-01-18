@@ -11,7 +11,6 @@ import java.io.Serializable;
 import javax.batch.api.partition.AbstractPartitionAnalyzer;
 import javax.batch.runtime.context.StepContext;
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.jboss.logging.Logger;
 
@@ -21,22 +20,18 @@ import org.jboss.logging.Logger;
  *
  * @author Mincong Huang
  */
-@Named
 public class ProgressAggregator extends AbstractPartitionAnalyzer {
 
 	private static final Logger LOGGER = Logger.getLogger( ProgressAggregator.class );
-	private final StepContext stepContext;
 
 	@Inject
-	public ProgressAggregator(StepContext stepContext) {
-		this.stepContext = stepContext;
-	}
+	private StepContext stepContext;
 
 	/**
 	 * Analyze data obtained from different partition plans via partition data collectors. The current analyze is to
 	 * summarize to their progresses : workDone = workDone1 + workDone2 + ... + workDoneN. Then it displays the total
 	 * mass index progress in percentage. This method is very similar to the current simple progress monitor.
-	 * 
+	 *
 	 * @param fromCollector the indexing progress of one partition, obtained from partition collector's method
 	 * #collectPartitionData()
 	 */

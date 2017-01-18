@@ -16,7 +16,6 @@ import javax.batch.api.BatchProperty;
 import javax.batch.api.listener.AbstractJobListener;
 import javax.batch.runtime.context.JobContext;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceUnit;
@@ -32,11 +31,12 @@ import org.jboss.logging.Logger;
  *
  * @author Mincong Huang
  */
-@Named
 public class JobContextSetupListener extends AbstractJobListener {
 
 	private static final Logger LOGGER = Logger.getLogger( JobContextSetupListener.class );
-	private final JobContext jobContext;
+
+	@Inject
+	private JobContext jobContext;
 
 	@Inject
 	@BatchProperty
@@ -52,11 +52,6 @@ public class JobContextSetupListener extends AbstractJobListener {
 
 	@PersistenceUnit(unitName = "h2")
 	private EntityManagerFactory emf;
-
-	@Inject
-	public JobContextSetupListener(JobContext jobContext) {
-		this.jobContext = jobContext;
-	}
 
 	@Override
 	public void beforeJob() throws Exception {

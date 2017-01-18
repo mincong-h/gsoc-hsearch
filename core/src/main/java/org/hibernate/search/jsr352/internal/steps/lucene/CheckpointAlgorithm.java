@@ -11,7 +11,6 @@ import javax.batch.api.chunk.AbstractCheckpointAlgorithm;
 import javax.batch.runtime.Metric;
 import javax.batch.runtime.context.StepContext;
 import javax.inject.Inject;
-import javax.inject.Named;
 
 /**
  * This checkpoint algorithm is used to provide a checkpoint decision based on the item count N given by the user. So,
@@ -20,19 +19,14 @@ import javax.inject.Named;
  *
  * @author Mincong Huang
  */
-@Named
 public class CheckpointAlgorithm extends AbstractCheckpointAlgorithm {
 
-	private final StepContext stepContext;
+	@Inject
+	private StepContext stepContext;
 
 	@Inject
 	@BatchProperty
 	private String itemCount;
-
-	@Inject
-	public CheckpointAlgorithm(StepContext stepContext) {
-		this.stepContext = stepContext;
-	}
 
 	@Override
 	public boolean isReadyToCheckpoint() throws Exception {

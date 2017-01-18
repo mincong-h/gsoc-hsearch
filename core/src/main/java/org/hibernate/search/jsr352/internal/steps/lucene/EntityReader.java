@@ -13,7 +13,6 @@ import javax.batch.api.chunk.AbstractItemReader;
 import javax.batch.runtime.context.JobContext;
 import javax.batch.runtime.context.StepContext;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.persistence.EntityManagerFactory;
 
 import org.hibernate.Criteria;
@@ -45,7 +44,6 @@ import org.jboss.logging.Logger;
  *
  * @author Mincong Huang
  */
-@Named
 public class EntityReader extends AbstractItemReader {
 
 	private static final Logger LOGGER = Logger.getLogger( EntityReader.class );
@@ -89,7 +87,7 @@ public class EntityReader extends AbstractItemReader {
 	private ScrollableResults scroll;
 	private SessionFactory sessionFactory;
 
-	EntityReader() {
+	public EntityReader() {
 	}
 
 	/**

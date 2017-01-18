@@ -10,7 +10,6 @@ import javax.batch.api.AbstractBatchlet;
 import javax.batch.api.BatchProperty;
 import javax.batch.runtime.context.JobContext;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.persistence.EntityManagerFactory;
 
 import org.hibernate.Session;
@@ -26,11 +25,12 @@ import org.jboss.logging.Logger;
  *
  * @author Mincong Huang
  */
-@Named
 public class BeforeChunkBatchlet extends AbstractBatchlet {
 
 	private static final Logger LOGGER = Logger.getLogger( BeforeChunkBatchlet.class );
-	private final JobContext jobContext;
+
+	@Inject
+	private JobContext jobContext;
 
 	@Inject
 	@BatchProperty
@@ -42,11 +42,6 @@ public class BeforeChunkBatchlet extends AbstractBatchlet {
 
 	private Session session;
 	private FullTextSession fts;
-
-	@Inject
-	public BeforeChunkBatchlet(JobContext jobContext) {
-		this.jobContext = jobContext;
-	}
 
 	@Override
 	public String process() throws Exception {

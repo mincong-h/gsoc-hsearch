@@ -13,7 +13,6 @@ import javax.batch.api.chunk.ItemProcessor;
 import javax.batch.runtime.context.JobContext;
 import javax.batch.runtime.context.StepContext;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.naming.NamingException;
 import javax.persistence.EntityManagerFactory;
 
@@ -38,12 +37,15 @@ import org.jboss.logging.Logger;
  *
  * @author Mincong Huang
  */
-@Named
 public class LuceneDocProducer implements ItemProcessor {
 
 	private static final Logger LOGGER = Logger.getLogger( LuceneDocProducer.class );
-	private final JobContext jobContext;
-	private final StepContext stepContext;
+
+	@Inject
+	private JobContext jobContext;
+
+	@Inject
+	private StepContext stepContext;
 
 	@Inject
 	@BatchProperty
@@ -57,12 +59,6 @@ public class LuceneDocProducer implements ItemProcessor {
 	private DocumentBuilderIndexedEntity docBuilder;
 	private boolean isSetup = false;
 	private Class<?> entityType;
-
-	@Inject
-	public LuceneDocProducer(JobContext jobContext, StepContext stepContext) {
-		this.jobContext = jobContext;
-		this.stepContext = stepContext;
-	}
 
 	@Override
 	public Object processItem(Object item) throws Exception {

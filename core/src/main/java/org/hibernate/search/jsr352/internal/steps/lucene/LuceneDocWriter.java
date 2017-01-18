@@ -14,7 +14,6 @@ import javax.batch.api.chunk.AbstractItemWriter;
 import javax.batch.runtime.context.JobContext;
 import javax.batch.runtime.context.StepContext;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 
@@ -36,14 +35,17 @@ import org.jboss.logging.Logger;
  *
  * @author Mincong Huang
  */
-@Named
 @SuppressWarnings("deprecation")
 public class LuceneDocWriter extends AbstractItemWriter {
 
 	private static final Logger LOGGER = Logger.getLogger( LuceneDocWriter.class );
 	private static final boolean FORCE_ASYNC = true;
-	private final JobContext jobContext;
-	private final StepContext stepContext;
+
+	@Inject
+	private JobContext jobContext;
+
+	@Inject
+	private StepContext stepContext;
 
 	@Inject
 	@BatchProperty
@@ -53,12 +55,6 @@ public class LuceneDocWriter extends AbstractItemWriter {
 
 	private EntityManager em;
 	private EntityIndexBinding entityIndexBinding;
-
-	@Inject
-	public LuceneDocWriter(JobContext jobContext, StepContext stepContext) {
-		this.jobContext = jobContext;
-		this.stepContext = stepContext;
-	}
 
 	/**
 	 * The close method marks the end of use of the ItemWriter. This method is called when the job stops for any reason.
