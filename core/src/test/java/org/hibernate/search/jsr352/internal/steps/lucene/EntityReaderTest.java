@@ -38,6 +38,8 @@ import org.mockito.MockitoAnnotations;
 public class EntityReaderTest {
 
 	private static final Logger LOGGER = Logger.getLogger( EntityReaderTest.class );
+
+	private static final String PERSISTENCE_UNIT_NAME = "h2";
 	private static final Company[] COMPANIES = new Company[]{
 			new Company( "Red Hat" ),
 			new Company( "Google" ),
@@ -57,7 +59,7 @@ public class EntityReaderTest {
 	public void setUp() {
 		EntityManager em = null;
 		try {
-			emf = Persistence.createEntityManagerFactory( "h2" );
+			emf = Persistence.createEntityManagerFactory( PERSISTENCE_UNIT_NAME );
 			em = emf.createEntityManager();
 			em.getTransaction().begin();
 			for ( Company c : COMPANIES ) {

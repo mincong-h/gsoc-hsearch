@@ -54,6 +54,10 @@
             <groupId>org.hibernate</groupId>
             <artifactId>hsearch-jsr352-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hsearch-jsr352-cdi</artifactId>
+        </dependency>
         <!-- TODO maybe we need JBeret here -->
     </dependencies>
 

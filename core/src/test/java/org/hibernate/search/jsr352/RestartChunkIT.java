@@ -44,6 +44,9 @@ public class RestartChunkIT {
 
 	private static final Logger LOGGER = Logger.getLogger( RestartChunkIT.class );
 
+	private static final String PERSISTENCE_UNIT_NAME = "h2";
+	private static final String SESSION_FACTORY_NAME = "h2-entityManagerFactory";
+
 	private static final long DB_COMP_ROWS = 100;
 	private static final long DB_PERS_ROWS = 50;
 
@@ -62,7 +65,7 @@ public class RestartChunkIT {
 		};
 
 		jobOperator = JobFactory.getJobOperator();
-		emf = Persistence.createEntityManagerFactory( "h2" );
+		emf = Persistence.createEntityManagerFactory( PERSISTENCE_UNIT_NAME );
 
 		EntityManager em = emf.createEntityManager();
 		em.getTransaction().begin();
@@ -89,7 +92,8 @@ public class RestartChunkIT {
 
 		// start the job
 		long execId1 = BatchIndexingJob.forEntities( Company.class, Person.class )
-				.underJavaSE( emf, jobOperator )
+				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
+				.underJavaSE( jobOperator )
 				.checkpointFreq( 10 )
 				.start();
 		JobExecution jobExec1 = jobOperator.getJobExecution( execId1 );
@@ -102,7 +106,7 @@ public class RestartChunkIT {
 		}
 
 		// restart the job
-		long execId2 = BatchIndexingJob.restart( execId1, emf, jobOperator );
+		long execId2 = BatchIndexingJob.restart( execId1, jobOperator );
 		JobExecution jobExec2 = jobOperator.getJobExecution( execId2 );
 		jobExec2 = keepTestAlive( jobExec2 );
 		for ( StepExecution stepExec : jobOperator.getStepExecutions( execId2 ) ) {

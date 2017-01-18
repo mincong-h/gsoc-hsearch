@@ -24,6 +24,8 @@
             <property name="hibernate.hbm2ddl.auto" value="create-drop" />
             <property name="hibernate.search.default.directory_provider" value="ram" />
             <property name="hibernate.search.indexing_strategy" value="manual" />
+            <property name="hibernate.session_factory_name" value="h2-entityManagerFactory" />
+            <property name="hibernate.session_factory_name_is_jndi" value="false" />
         </properties>
     </persistence-unit>
 </persistence>

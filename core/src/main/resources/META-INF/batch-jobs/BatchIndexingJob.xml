@@ -9,9 +9,9 @@
     xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/jobXML_1_0.xsd" version="1.0">
 
     <listeners>
-        <listener ref="org.hibernate.search.jsr352.internal.JobContextSetupListener">
+        <listener ref="hibernateSearchBatchIndexingJobContextSetupListener">
             <properties>
-                <property name="isJavaSE" value="#{jobParameters['isJavaSE']}" />
+                <property name="entityManagerFactoryReference" value="#{jobParameters['entityManagerFactoryReference']}" />
                 <property name="rootEntities" value="#{jobParameters['rootEntities']}" />
                 <property name="criteria" value="#{jobParameters['criteria']}" />
             </properties>

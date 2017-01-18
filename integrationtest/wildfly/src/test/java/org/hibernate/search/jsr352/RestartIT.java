@@ -46,6 +46,8 @@ import org.junit.runner.RunWith;
 public class RestartIT {
 
 	private static final Logger LOGGER = Logger.getLogger( RestartIT.class );
+
+	private static final String PERSISTENCE_UNIT_NAME = "h2";
 	private static final SimpleDateFormat SDF = new SimpleDateFormat( "dd/MM/yyyy" );
 	private static final int DB_DAY1_ROWS = 2000;
 	private static final int DB_DAY2_ROWS = 3000;
@@ -55,7 +57,7 @@ public class RestartIT {
 	@Inject
 	private MessageManager messageManager;
 
-	@PersistenceUnit(unitName = "h2")
+	@PersistenceUnit(unitName = PERSISTENCE_UNIT_NAME)
 	private EntityManagerFactory emf;
 
 	@Deployment

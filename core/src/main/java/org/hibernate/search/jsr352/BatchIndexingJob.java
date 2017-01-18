@@ -14,10 +14,8 @@ import java.util.stream.Collectors;
 
 import javax.batch.operations.JobOperator;
 import javax.batch.runtime.BatchRuntime;
-import javax.persistence.EntityManagerFactory;
 
 import org.hibernate.criterion.Criterion;
-import org.hibernate.search.jsr352.internal.se.JobSEEnvironment;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
 
 /**
@@ -55,25 +53,19 @@ public class BatchIndexingJob {
 	 * @param jobOperatorSE
 	 * @return
 	 */
-	public static long restart(long executionId, EntityManagerFactory entityManagerFactorySE,
-			JobOperator jobOperatorSE) {
-		if ( entityManagerFactorySE == null ) {
-			throw new NullPointerException( "You're under a Java SE environment. "
-					+ "Please assign the EntityManagerFactory before the job start." );
-		}
+	public static long restart(long executionId, JobOperator jobOperatorSE) {
 		if ( jobOperatorSE == null ) {
 			throw new NullPointerException( "You're under a Java SE environment. "
 					+ "Please assign the jobOperator before the job start." );
 		}
-		JobSEEnvironment.getInstance().setEntityManagerFactory( entityManagerFactorySE );
 		return jobOperatorSE.restart( executionId, null );
 	}
 
 	public static class Builder {
 
 		private final Set<Class<?>> rootEntities;
+		private String entityManagerFactoryReference;
 		private boolean cacheable = false;
-		private boolean isJavaSE = false;
 		private boolean optimizeAfterPurge = false;
 		private boolean optimizeAtEnd = false;
 		private boolean purgeAtStart = false;
@@ -88,7 +80,7 @@ public class BatchIndexingJob {
 
 		private Builder(Class<?> rootEntity, Class<?>... rootEntities) {
 			if ( rootEntity == null ) {
-				throw new NullPointerException( "rootEntities must have at least 1 element." );
+				throw new IllegalArgumentException( "rootEntities must have at least 1 element." );
 			}
 			this.rootEntities = new HashSet<>();
 			this.rootEntities.add( rootEntity );
@@ -97,6 +89,11 @@ public class BatchIndexingJob {
 			}
 			criteria = new HashSet<>();
 			hql = "";
+		}
+
+		public Builder entityManagerFactoryReference(String entityManagerFactoryReference) {
+			this.entityManagerFactoryReference = entityManagerFactoryReference;
+			return this;
 		}
 
 		/**
@@ -125,23 +122,14 @@ public class BatchIndexingJob {
 		}
 
 		/**
-		 * Configure additional parameters for Java SE: assign the entity manager factory and assign the job operator.
+		 * Configure additional parameters for Java SE: assign the job operator.
 		 * You should NOT use this method if you're under Java EE.
 		 */
-		public Builder underJavaSE(EntityManagerFactory entityManagerFactory,
-				JobOperator jobOperator) {
-			if ( entityManagerFactory == null ) {
-				throw new NullPointerException( "The entityManagerFactory cannot be null." );
-			}
-			else if ( !entityManagerFactory.isOpen() ) {
-				throw new IllegalStateException( "Please provide an open entityManagerFactory." );
-			}
+		public Builder underJavaSE(JobOperator jobOperator) {
 			if ( jobOperator == null ) {
 				throw new NullPointerException( "The jobOperator cannot be null." );
 			}
-			JobSEEnvironment.getInstance().setEntityManagerFactory( entityManagerFactory );
 			this.jobOperator = jobOperator;
-			this.isJavaSE = true;
 			return this;
 		}
 
@@ -290,14 +278,16 @@ public class BatchIndexingJob {
 			Properties jobParams = new Properties();
 
 			// check different variables
-			if ( !isJavaSE ) {
+			if ( jobOperator == null ) {
 				jobOperator = BatchRuntime.getJobOperator();
 			}
 
+			if ( entityManagerFactoryReference != null ) {
+				jobParams.put( "entityManagerFactoryReference", entityManagerFactoryReference );
+			}
 			jobParams.put( "cacheable", String.valueOf( cacheable ) );
 			jobParams.put( "fetchSize", String.valueOf( fetchSize ) );
 			jobParams.put( "hql", hql );
-			jobParams.put( "isJavaSE", String.valueOf( isJavaSE ) );
 			jobParams.put( "itemCount", String.valueOf( itemCount ) );
 			jobParams.put( "maxResults", String.valueOf( maxResults ) );
 			jobParams.put( "maxThreads", String.valueOf( maxThreads ) );

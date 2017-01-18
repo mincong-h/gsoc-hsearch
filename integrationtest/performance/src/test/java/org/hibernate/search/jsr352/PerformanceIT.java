@@ -46,6 +46,8 @@ import org.junit.runner.RunWith;
 public class PerformanceIT {
 
 	private static final Logger LOGGER = Logger.getLogger( PerformanceIT.class );
+
+	private static final String PERSISTENCE_UNIT_NAME = "h2";
 	private static final int JOB_FETCH_SIZE = 100 * 1000;
 	private static final int JOB_MAX_THREADS = 10;
 	private static final int JOB_ROWS_PER_PARTITION = 20 * 1000;
@@ -53,7 +55,7 @@ public class PerformanceIT {
 	private static final int DB_COMP_ROWS = 10 * 1000;
 	private static final int DB_PERS_ROWS = 10 * 1000;
 
-	@PersistenceContext(unitName = "h2")
+	@PersistenceContext(unitName = PERSISTENCE_UNIT_NAME)
 	private EntityManager em;
 
 	@Inject

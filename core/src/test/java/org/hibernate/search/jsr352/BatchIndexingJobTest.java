@@ -15,10 +15,10 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.batch.operations.JobOperator;
-import javax.persistence.EntityManagerFactory;
 
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Restrictions;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,6 +33,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class BatchIndexingJobTest {
 
+	private static final String SESSION_FACTORY_NAME = "someUniqueString";
+
 	private static final boolean OPTIMIZE_AFTER_PURGE = true;
 	private static final boolean OPTIMIZE_AT_END = true;
 	private static final boolean PURGE_AT_START = true;
@@ -45,7 +47,7 @@ public class BatchIndexingJobTest {
 	private JobOperator mockedOperator;
 
 	@Mock
-	private EntityManagerFactory mockedEMF;
+	private SessionFactoryImplementor mockedEMF;
 
 	@Before
 	public void setUp() {
@@ -59,7 +61,8 @@ public class BatchIndexingJobTest {
 
 		ArgumentCaptor<Properties> propsCaptor = ArgumentCaptor.forClass( Properties.class );
 		long executionID = BatchIndexingJob.forEntities( String.class, Integer.class )
-				.underJavaSE( mockedEMF, mockedOperator )
+				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
+				.underJavaSE( mockedOperator )
 				.fetchSize( FETCH_SIZE )
 				.maxResults( MAX_RESULTS )
 				.maxThreads( MAX_THREADS )
@@ -73,6 +76,7 @@ public class BatchIndexingJobTest {
 		Mockito.verify( mockedOperator )
 				.start( Mockito.anyString(), propsCaptor.capture() );
 		Properties props = propsCaptor.getValue();
+		assertEquals( SESSION_FACTORY_NAME, props.getProperty( "entityManagerFactoryReference" ) );
 		assertEquals( FETCH_SIZE, Integer.parseInt( props.getProperty( "fetchSize" ) ) );
 		assertEquals( MAX_RESULTS, Integer.parseInt( props.getProperty( "maxResults" ) ) );
 		assertEquals( OPTIMIZE_AFTER_PURGE, Boolean.parseBoolean( props.getProperty( "optimizeAfterPurge" ) ) );
@@ -93,7 +97,8 @@ public class BatchIndexingJobTest {
 
 		ArgumentCaptor<Properties> propsCaptor = ArgumentCaptor.forClass( Properties.class );
 		long executionID = BatchIndexingJob.forEntities( Integer.class, String.class )
-				.underJavaSE( mockedEMF, mockedOperator )
+				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
+				.underJavaSE( mockedOperator )
 				.start();
 		assertEquals( 1L, executionID );
 
@@ -111,7 +116,7 @@ public class BatchIndexingJobTest {
 
 		ArgumentCaptor<Properties> propsCaptor = ArgumentCaptor.forClass( Properties.class );
 		long executionID = BatchIndexingJob.forEntity( Integer.class )
-				.underJavaSE( mockedEMF, mockedOperator )
+				.underJavaSE( mockedOperator )
 				.start();
 		assertEquals( 1L, executionID );
 
@@ -123,14 +128,9 @@ public class BatchIndexingJobTest {
 		assertTrue( entityNames.contains( Integer.class.getName() ) );
 	}
 
-	@Test(expected = NullPointerException.class)
+	@Test(expected = IllegalArgumentException.class)
 	public void testForEntity_null() {
 		BatchIndexingJob.forEntity( null );
-	}
-
-	@Test(expected = NullPointerException.class)
-	public void testForEntitiy_null() {
-		BatchIndexingJob.forEntities( null );
 	}
 
 	@Test(expected = NullPointerException.class)
