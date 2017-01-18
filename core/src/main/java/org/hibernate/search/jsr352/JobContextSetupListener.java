@@ -20,13 +20,11 @@ import javax.inject.Inject;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 
-import org.hibernate.SessionFactory;
-import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.criterion.Criterion;
-import org.hibernate.internal.SessionFactoryRegistry;
 import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jpa.Search;
 import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
+import org.hibernate.search.jsr352.context.jpa.internal.SessionFactoryNameRegistry;
 import org.hibernate.search.jsr352.internal.JobContextData;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
 import org.hibernate.search.util.StringHelper;
@@ -75,7 +73,7 @@ public class JobContextSetupListener extends AbstractJobListener {
 	 */
 	protected EntityManagerFactoryRegistry getEntityManagerFactoryRegistry(String scopeName) {
 		if ( StringHelper.isEmpty( scopeName ) || SESSION_FACTORY_NAME_SCOPE_NAME.equals( scopeName ) ) {
-			return new HibernateRegistryEntityManagerFactoryRegistry();
+			return SessionFactoryNameRegistry.getInstance();
 		}
 		else {
 			throw new SearchException( "Unknown entity manager factory registry: '" + scopeName + "'."
@@ -125,38 +123,6 @@ public class JobContextSetupListener extends AbstractJobListener {
 			catch (Exception e) {
 				LOGGER.error( e );
 			}
-		}
-	}
-
-	/**
-	 * An {@link EntityManagerFactoryRegistry} that retrieves the entity manager factory
-	 * from the internal Hibernate registry.
-	 *
-	 * @author Yoann Rodiere
-	 */
-	private static final class HibernateRegistryEntityManagerFactoryRegistry implements EntityManagerFactoryRegistry {
-
-		@Override
-		public EntityManagerFactory get(String reference) {
-			SessionFactory factory = SessionFactoryRegistry.INSTANCE.getNamedSessionFactory( reference );
-			if ( factory == null ) {
-				throw new SearchException( "Invalid reference to an entity manager factory: '" + reference +"';"
-						+ " this name does not match any known entity manager factory."
-						+ " Please name your entity manager factory"
-						+ " (for instance by setting the '" + AvailableSettings.SESSION_FACTORY_NAME + "' option)"
-						+ " and provide the name to the batch indexing job through the 'entityManagerFactoryName' parameter."
-						+ " Also, ensure the entityManagerFactory has already been created when you launch the job." );
-			}
-			return factory;
-		}
-
-		@Override
-		public EntityManagerFactory getDefault() {
-			throw new SearchException( "No reference to an entity manager factory provided."
-					+ " Please name your entity manager factory "
-					+ " (for instance by setting the '" + AvailableSettings.SESSION_FACTORY_NAME + "' option)"
-					+ " and provide the name to the batch indexing job through the 'entityManagerFactoryName' parameter."
-					+ " Also, ensure the entityManagerFactory has already been created when you launch the job." );
 		}
 	}
 
