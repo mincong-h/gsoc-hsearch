@@ -16,7 +16,7 @@ import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryProvider;
 /**
  * @author Yoann Rodiere
  */
-@Named("hibernateSearchBatchIndexingJobContextSetupListener")
+@Named("org.hibernate.search.jsr352.JobContextSetupListener")
 public class CDIJobContextSetupListener extends JobContextSetupListener {
 
 	@Inject

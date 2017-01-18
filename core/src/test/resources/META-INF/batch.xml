@@ -7,8 +7,7 @@
   -->
 <batch-artifacts xmlns="http://xmlns.jcp.org/xml/ns/javaee">
     <!--
-         This batch artifact is defined in the batch.xml so that it can
-         be overridden when using a dependency injection mechanism
+         This simulates the presence of an application-defined batch.xml, to check that
+         our batch artifacts still get created properly.
      -->
-    <ref id="hibernateSearchBatchIndexingJobContextSetupListener" class="org.hibernate.search.jsr352.JobContextSetupListener" />
 </batch-artifacts>
