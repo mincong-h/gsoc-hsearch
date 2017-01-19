@@ -24,9 +24,10 @@ import org.hibernate.search.jpa.FullTextEntityManager;
 import org.hibernate.search.jpa.Search;
 import org.hibernate.search.jsr352.entity.Company;
 import org.hibernate.search.jsr352.entity.Person;
+import org.hibernate.search.jsr352.test.util.JobFactory;
+import org.hibernate.search.jsr352.test.util.JobTestUtil;
 import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMRules;
-import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,9 +43,9 @@ import org.junit.runner.RunWith;
 })
 public class RestartChunkIT {
 
-	private static final Logger LOGGER = Logger.getLogger( RestartChunkIT.class );
-
 	private static final String PERSISTENCE_UNIT_NAME = "h2";
+
+	private static final int JOB_TIMEOUT_MS = 10_000;
 
 	private static final long DB_COMP_ROWS = 100;
 	private static final long DB_PERS_ROWS = 50;
@@ -96,7 +97,7 @@ public class RestartChunkIT {
 				.checkpointFreq( 10 )
 				.start();
 		JobExecution jobExec1 = jobOperator.getJobExecution( execId1 );
-		jobExec1 = keepTestAlive( jobExec1 );
+		jobExec1 = JobTestUtil.waitForTermination( jobOperator, jobExec1, JOB_TIMEOUT_MS );
 		// job will be stopped by the byteman
 		for ( StepExecution stepExec : jobOperator.getStepExecutions( execId1 ) ) {
 			if ( stepExec.getStepName().equals( "produceLuceneDoc" ) ) {
@@ -107,7 +108,7 @@ public class RestartChunkIT {
 		// restart the job
 		long execId2 = BatchIndexingJob.restart( execId1, jobOperator );
 		JobExecution jobExec2 = jobOperator.getJobExecution( execId2 );
-		jobExec2 = keepTestAlive( jobExec2 );
+		jobExec2 = JobTestUtil.waitForTermination( jobOperator, jobExec2, JOB_TIMEOUT_MS );
 		for ( StepExecution stepExec : jobOperator.getStepExecutions( execId2 ) ) {
 			assertEquals( BatchStatus.COMPLETED, stepExec.getBatchStatus() );
 		}
@@ -130,22 +131,6 @@ public class RestartChunkIT {
 		List<T> result = ftem.createFullTextQuery( luceneQuery ).getResultList();
 		em.close();
 		return result;
-	}
-
-	private JobExecution keepTestAlive(JobExecution jobExecution) throws InterruptedException {
-		int tries = 0;
-		while ( ( jobExecution.getBatchStatus().equals( BatchStatus.STARTING )
-				|| jobExecution.getBatchStatus().equals( BatchStatus.STARTED ) )
-				&& tries < 10 ) {
-
-			long executionId = jobExecution.getExecutionId();
-			LOGGER.infof( "Job (id=%d) %s, thread sleep 1000 ms...",
-					executionId, jobExecution.getBatchStatus() );
-			Thread.sleep( 1000 );
-			jobExecution = jobOperator.getJobExecution( executionId );
-			tries++;
-		}
-		return jobExecution;
 	}
 
 	@After

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.batch.operations.JobOperator;
 import javax.batch.runtime.BatchRuntime;
 import javax.batch.runtime.BatchStatus;
 import javax.batch.runtime.JobExecution;
@@ -26,6 +27,7 @@ import org.hibernate.search.jsr352.test.entity.Company;
 import org.hibernate.search.jsr352.test.entity.CompanyManager;
 import org.hibernate.search.jsr352.test.entity.Person;
 import org.hibernate.search.jsr352.test.entity.PersonManager;
+import org.hibernate.search.jsr352.test.util.JobTestUtil;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.logging.Logger;
@@ -48,6 +50,9 @@ public class PerformanceIT {
 	private static final Logger LOGGER = Logger.getLogger( PerformanceIT.class );
 
 	private static final String PERSISTENCE_UNIT_NAME = "h2";
+
+	private static final int JOB_TIMEOUT_MS = 300_000;
+
 	private static final int JOB_FETCH_SIZE = 100 * 1000;
 	private static final int JOB_MAX_THREADS = 10;
 	private static final int JOB_ROWS_PER_PARTITION = 20 * 1000;
@@ -71,6 +76,7 @@ public class PerformanceIT {
 				.addAsResource( "META-INF/batch-jobs/make-deployment-as-batch-app.xml" ) // WFLY-7000
 				.addAsWebInfResource( "jboss-deployment-structure.xml" )
 				.addAsWebInfResource( EmptyAsset.INSTANCE, "beans.xml" )
+				.addPackage( JobTestUtil.class.getPackage() )
 				.addPackage( Company.class.getPackage() );
 		return war;
 	}
@@ -155,6 +161,8 @@ public class PerformanceIT {
 		assertEquals( 0, hibernate.size() );
 		assertEquals( 0, mincong.size() );
 
+		JobOperator jobOperator = BatchRuntime.getJobOperator();
+
 		// Start the job
 		long executionId = BatchIndexingJob.forEntities( Company.class, Person.class )
 				.fetchSize( JOB_FETCH_SIZE )
@@ -163,7 +171,7 @@ public class PerformanceIT {
 				.checkpointFreq( JOB_ITEM_COUNT )
 				.start();
 		JobExecution jobExecution = BatchRuntime.getJobOperator().getJobExecution( executionId );
-		jobExecution = keepTestAlive( jobExecution );
+		jobExecution = JobTestUtil.waitForTermination( jobOperator, jobExecution, JOB_TIMEOUT_MS );
 		assertEquals( BatchStatus.COMPLETED, jobExecution.getBatchStatus() );
 
 		// Assert
@@ -173,23 +181,4 @@ public class PerformanceIT {
 		assertEquals( 1, mincong.size() );
 	}
 
-	private JobExecution keepTestAlive(JobExecution jobExecution)
-			throws InterruptedException {
-
-		int tries = 0;
-		while ( ( jobExecution.getBatchStatus().equals( BatchStatus.STARTING )
-				|| jobExecution.getBatchStatus().equals( BatchStatus.STARTED ) )
-				&& tries < 300 ) {
-
-			long executionId = jobExecution.getExecutionId();
-			LOGGER.infof( "Job execution (id=%d) is still working (status=%s).",
-					executionId,
-					jobExecution.getBatchStatus(),
-					1000 );
-			Thread.sleep( 1000 );
-			jobExecution = BatchRuntime.getJobOperator().getJobExecution( executionId );
-			tries++;
-		}
-		return jobExecution;
-	}
 }

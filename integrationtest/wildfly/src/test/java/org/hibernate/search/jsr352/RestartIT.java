@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.batch.operations.JobOperator;
 import javax.batch.runtime.BatchRuntime;
 import javax.batch.runtime.BatchStatus;
 import javax.batch.runtime.JobExecution;
@@ -24,9 +25,9 @@ import javax.persistence.PersistenceUnit;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.search.jsr352.test.Message;
 import org.hibernate.search.jsr352.test.MessageManager;
+import org.hibernate.search.jsr352.test.util.JobTestUtil;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.logging.Logger;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
@@ -45,14 +46,13 @@ import org.junit.runner.RunWith;
 @RunWith(Arquillian.class)
 public class RestartIT {
 
-	private static final Logger LOGGER = Logger.getLogger( RestartIT.class );
-
 	private static final String PERSISTENCE_UNIT_NAME = "h2";
+
+	private static final int JOB_TIMEOUT_MS = 40_000;
+
 	private static final SimpleDateFormat SDF = new SimpleDateFormat( "dd/MM/yyyy" );
 	private static final int DB_DAY1_ROWS = 2000;
 	private static final int DB_DAY2_ROWS = 3000;
-	private static final int MAX_TRIES = 40;
-	private static final int THREAD_SLEEP = 1000;
 
 	@Inject
 	private MessageManager messageManager;
@@ -68,6 +68,7 @@ public class RestartIT {
 				.addAsResource( "META-INF/batch-jobs/make-deployment-as-batch-app.xml" ) // WFLY-7000
 				.addAsWebInfResource( "jboss-deployment-structure.xml" )
 				.addAsWebInfResource( EmptyAsset.INSTANCE, "beans.xml" )
+				.addPackage( JobTestUtil.class.getPackage() )
 				.addPackage( Message.class.getPackage() );
 		return war;
 	}
@@ -91,19 +92,20 @@ public class RestartIT {
 
 	@Test
 	public void testJob() throws InterruptedException, IOException, ParseException {
-
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "31/08/2016" ) ).size() );
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "01/09/2016" ) ).size() );
 
+		JobOperator jobOperator = BatchRuntime.getJobOperator();
+
 		// The 1st execution. Keep it alive and wait Byteman to stop it
 		long execId1 = BatchIndexingJob.forEntity( Message.class ).start();
-		JobExecution jobExec1 = BatchRuntime.getJobOperator().getJobExecution( execId1 );
-		jobExec1 = keepTestAlive( jobExec1 );
+		JobExecution jobExec1 = jobOperator.getJobExecution( execId1 );
+		jobExec1 = JobTestUtil.waitForTermination( jobOperator, jobExec1, JOB_TIMEOUT_MS );
 
 		// Restart the job. This is the 2nd execution.
 		long execId2 = BatchIndexingJob.restart( execId1 );
-		JobExecution jobExec2 = BatchRuntime.getJobOperator().getJobExecution( execId2 );
-		jobExec2 = keepTestAlive( jobExec2 );
+		JobExecution jobExec2 = jobOperator.getJobExecution( execId2 );
+		jobExec2 = JobTestUtil.waitForTermination( jobOperator, jobExec2, JOB_TIMEOUT_MS );
 
 		assertEquals( BatchStatus.COMPLETED, jobExec2.getBatchStatus() );
 		assertEquals( DB_DAY1_ROWS, messageManager.findMessagesFor( SDF.parse( "31/08/2016" ) ).size() );
@@ -112,21 +114,22 @@ public class RestartIT {
 
 	@Test
 	public void testJob_usingCriteria() throws InterruptedException, IOException, ParseException {
-
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "31/08/2016" ) ).size() );
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "01/09/2016" ) ).size() );
+
+		JobOperator jobOperator = BatchRuntime.getJobOperator();
 
 		// The 1st execution. Keep it alive and wait Byteman to stop it
 		long execId1 = BatchIndexingJob.forEntity( Message.class )
 				.restrictedBy( Restrictions.ge( "date", SDF.parse( "01/09/2016" ) ) )
 				.start();
-		JobExecution jobExec1 = BatchRuntime.getJobOperator().getJobExecution( execId1 );
-		jobExec1 = keepTestAlive( jobExec1 );
+		JobExecution jobExec1 = jobOperator.getJobExecution( execId1 );
+		jobExec1 = JobTestUtil.waitForTermination( jobOperator, jobExec1, JOB_TIMEOUT_MS );
 
 		// Restart the job. This is the 2nd execution.
 		long execId2 = BatchIndexingJob.restart( execId1 );
-		JobExecution jobExec2 = BatchRuntime.getJobOperator().getJobExecution( execId2 );
-		jobExec2 = keepTestAlive( jobExec2 );
+		JobExecution jobExec2 = jobOperator.getJobExecution( execId2 );
+		jobExec2 = JobTestUtil.waitForTermination( jobOperator, jobExec2, JOB_TIMEOUT_MS );
 
 		assertEquals( BatchStatus.COMPLETED, jobExec2.getBatchStatus() );
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "31/08/2016" ) ).size() );
@@ -135,40 +138,19 @@ public class RestartIT {
 
 	@Test
 	public void testJob_usingHQL() throws InterruptedException, IOException, ParseException {
-
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "31/08/2016" ) ).size() );
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "01/09/2016" ) ).size() );
+
+		JobOperator jobOperator = BatchRuntime.getJobOperator();
 
 		long execId1 = BatchIndexingJob.forEntity( Message.class )
 				.restrictedBy( "select m from Message m where day( m.date ) = 31" )
 				.start();
 		JobExecution jobExec1 = BatchRuntime.getJobOperator().getJobExecution( execId1 );
-		jobExec1 = keepTestAlive( jobExec1 );
+		jobExec1 = JobTestUtil.waitForTermination( jobOperator, jobExec1, JOB_TIMEOUT_MS );
 
 		assertEquals( BatchStatus.COMPLETED, jobExec1.getBatchStatus() );
 		assertEquals( DB_DAY1_ROWS, messageManager.findMessagesFor( SDF.parse( "31/08/2016" ) ).size() );
 		assertEquals( 0, messageManager.findMessagesFor( SDF.parse( "01/09/2016" ) ).size() );
-	}
-
-	private JobExecution keepTestAlive(JobExecution jobExecution)
-			throws InterruptedException {
-
-		int tries = 0;
-		while ( !jobExecution.getBatchStatus().equals( BatchStatus.COMPLETED )
-				&& !jobExecution.getBatchStatus().equals( BatchStatus.STOPPED )
-				&& !jobExecution.getBatchStatus().equals( BatchStatus.FAILED )
-				&& tries < MAX_TRIES ) {
-
-			long executionId = jobExecution.getExecutionId();
-			LOGGER.infof(
-					"Job execution (id=%d) has status %s. Thread sleeps %d ms...",
-					executionId,
-					jobExecution.getBatchStatus(),
-					THREAD_SLEEP );
-			Thread.sleep( THREAD_SLEEP );
-			jobExecution = BatchRuntime.getJobOperator().getJobExecution( executionId );
-			tries++;
-		}
-		return jobExecution;
 	}
 }

@@ -31,6 +31,8 @@ import org.hibernate.search.jpa.Search;
 import org.hibernate.search.jsr352.entity.Company;
 import org.hibernate.search.jsr352.entity.Person;
 import org.hibernate.search.jsr352.entity.WhoAmI;
+import org.hibernate.search.jsr352.test.util.JobFactory;
+import org.hibernate.search.jsr352.test.util.JobTestUtil;
 import org.jboss.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -46,18 +48,19 @@ public class BatchIndexingJobIT {
 	private static final String PERSISTENCE_UNIT_NAME = "h2";
 	private static final String SESSION_FACTORY_NAME = "h2-entityManagerFactory";
 
+	private static final int JOB_TIMEOUT_MS = 10_000;
+
 	// example dataset
 	private static final long DB_COMP_ROWS = 3;
 	private static final long DB_PERS_ROWS = 3;
 	private static final long DB_WHOS_ROWS = 3;
 	private static final long DB_TOTAL_ROWS = DB_COMP_ROWS + DB_PERS_ROWS + DB_WHOS_ROWS;
 
-	private EntityManagerFactory emf;
 	private JobOperator jobOperator;
+	private EntityManagerFactory emf;
 
 	@Before
 	public void setup() {
-
 		jobOperator = JobFactory.getJobOperator();
 
 		List<Company> companies = Arrays.asList(
@@ -116,13 +119,12 @@ public class BatchIndexingJobIT {
 		assertEquals( 0, people.size() );
 		assertEquals( 0, whos.size() );
 
-		JobOperator jobOperator = JobFactory.getJobOperator();
 		long executionId = BatchIndexingJob.forEntities( Company.class, Person.class, WhoAmI.class )
 				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
 				.underJavaSE( jobOperator )
 				.start();
 		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
-		jobExecution = keepTestAlive( jobExecution );
+		jobExecution = JobTestUtil.waitForTermination( jobOperator, jobExecution, JOB_TIMEOUT_MS );
 		List<StepExecution> stepExecutions = jobOperator.getStepExecutions( executionId );
 		for ( StepExecution stepExecution : stepExecutions ) {
 			LOGGER.infof( "step %s executed.", stepExecution.getStepName() );
@@ -146,14 +148,13 @@ public class BatchIndexingJobIT {
 		List<Company> companies = findClass( Company.class, "name", "Google" );
 		assertEquals( 0, companies.size() );
 
-		JobOperator jobOperator = JobFactory.getJobOperator();
 		long executionId = BatchIndexingJob.forEntities( Company.class )
 				.entityManagerFactoryScope( "persistence-unit-name" )
 				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
 				.underJavaSE( jobOperator )
 				.start();
 		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
-		jobExecution = keepTestAlive( jobExecution );
+		jobExecution = JobTestUtil.waitForTermination( jobOperator, jobExecution, JOB_TIMEOUT_MS );
 
 		companies = findClass( Company.class, "name", "Google" );
 		assertEquals( 1, companies.size() );
@@ -168,14 +169,13 @@ public class BatchIndexingJobIT {
 		List<Company> companies = findClass( Company.class, "name", "Google" );
 		assertEquals( 0, companies.size() );
 
-		JobOperator jobOperator = JobFactory.getJobOperator();
 		long executionId = BatchIndexingJob.forEntities( Company.class )
 				.entityManagerFactoryScope( "session-factory-name" )
 				.entityManagerFactoryReference( SESSION_FACTORY_NAME )
 				.underJavaSE( jobOperator )
 				.start();
 		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
-		jobExecution = keepTestAlive( jobExecution );
+		jobExecution = JobTestUtil.waitForTermination( jobOperator, jobExecution, JOB_TIMEOUT_MS );
 
 		companies = findClass( Company.class, "name", "Google" );
 		assertEquals( 1, companies.size() );
@@ -200,14 +200,13 @@ public class BatchIndexingJobIT {
 		assertEquals( 0, findClass( Company.class, "name", "Red Hat" ).size() );
 		assertEquals( 0, findClass( Company.class, "name", "Microsoft" ).size() );
 
-		JobOperator jobOperator = JobFactory.getJobOperator();
 		long executionId = BatchIndexingJob.forEntity( Company.class )
 				.restrictedBy( Restrictions.in( "name", "Google", "Red Hat" ) )
 				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
 				.underJavaSE( jobOperator )
 				.start();
 		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
-		jobExecution = keepTestAlive( jobExecution );
+		jobExecution = JobTestUtil.waitForTermination( jobOperator, jobExecution, JOB_TIMEOUT_MS );
 
 		assertEquals( 1, findClass( Company.class, "name", "Google" ).size() );
 		assertEquals( 1, findClass( Company.class, "name", "Red Hat" ).size() );
@@ -233,14 +232,13 @@ public class BatchIndexingJobIT {
 		assertEquals( 0, findClass( Company.class, "name", "Red Hat" ).size() );
 		assertEquals( 0, findClass( Company.class, "name", "Microsoft" ).size() );
 
-		JobOperator jobOperator = JobFactory.getJobOperator();
 		long executionId = BatchIndexingJob.forEntity( Company.class )
 				.restrictedBy( "select c from Company c where c.name in ( 'Google', 'Red Hat' )" )
 				.entityManagerFactoryReference( PERSISTENCE_UNIT_NAME )
 				.underJavaSE( jobOperator )
 				.start();
 		JobExecution jobExecution = jobOperator.getJobExecution( executionId );
-		jobExecution = keepTestAlive( jobExecution );
+		jobExecution = JobTestUtil.waitForTermination( jobOperator, jobExecution, JOB_TIMEOUT_MS );
 
 		assertEquals( 1, findClass( Company.class, "name", "Google" ).size() );
 		assertEquals( 1, findClass( Company.class, "name", "Red Hat" ).size() );
@@ -258,22 +256,6 @@ public class BatchIndexingJobIT {
 		List<T> result = ftem.createFullTextQuery( luceneQuery ).getResultList();
 		em.close();
 		return result;
-	}
-
-	public JobExecution keepTestAlive(JobExecution jobExecution) throws InterruptedException {
-		int tries = 0;
-		while ( ( jobExecution.getBatchStatus().equals( BatchStatus.STARTING )
-				|| jobExecution.getBatchStatus().equals( BatchStatus.STARTED ) )
-				&& tries < 10 ) {
-
-			long executionId = jobExecution.getExecutionId();
-			LOGGER.infof( "Job (id=%d) %s, thread sleep 1000 ms...",
-					executionId, jobExecution.getBatchStatus() );
-			Thread.sleep( 1000 );
-			jobExecution = jobOperator.getJobExecution( executionId );
-			tries++;
-		}
-		return jobExecution;
 	}
 
 	private void testBatchStatus(StepExecution stepExecution) {
