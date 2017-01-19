@@ -110,32 +110,92 @@ Checkpoint a partition-scope algorithm, which means each partition has its own
 checkpoint counter and it is not shared with other partitions.
 
 
-=== Persistence
-The new mass indexer interacts with databases using JPA. We need you to
-configure a persistence unit and provide an entity manager factory, so that the
-new mass indexer can use it.
+=== Selecting the persistence unit (EntityManagerFactory)
 
-If you’re under Java EE, there’s no additional configuration before the job start.
-Entity manager factory will be injected by annotation
-`@PersistenceUnit(name = “massindex”)` for all the internal classes. However,
-you need to ensure the existence of persistence unit “massindex”, so that we can
-detect it and do the CDI. If you’re under Java SE, please confirm the SE
-environment and assign specifically the entity manager factory via massindexer’s
-related method.
+[CAUTION]
+====
+Regarless of how the entity manager factory is retrieved,
+you must make sure that the entity manager factory used by the mass indexer
+will stay open during the whole mass indexing process.
+====
 
+==== Plain java environment (no CDI)
 
-.Additional configuration in Java SE
+If you use only one persistence unit, the mass indexer will be able to access
+your database automatically without any special configuration:
+you only have to make sure to create the `EntityManagerFactory` (or `SessionFactory`)
+in your application before launching the mass indexer.
+
+If you want to use multiple persistence unit,
+you will have to add two parameters when launching the mass indexer:
+
+ * `entityManagerFactoryReference`: this is the string that will identify the `EntityManagerFactory`.
+ * `entityManagerFactoryScope`: this allows to select how you want to reference the `EntityManagerFactory`.
+   Possible values are:
+   
+ ** `persistence-unit-name` (the default): use the persistence unit name defined
+      in `persistence.xml`.
+ ** `session-factory-name`: use the session factory name
+      defined in the Hibernate configuration by the `hibernate.session_factory_name`
+      configuration property.
+      
+
+[CAUTION]
+====
+If you set the `hibernate.session_factory_name` property in the Hibernate configuration
+and you don't use JNDI, you will also have to set `hibernate.session_factory_name_is_jndi` to `false`.
+====
+
+==== CDI environment
+
+You can use CDI to retrieve the `EntityManagerFactory`.
+Unless you use an already packaged `hibernate-search-jsr352` module for your application container,
+this will require you to add the `hibernate-search-jsr352-cdi` jar to your classpath.
+
+If you use only one persistence unit, the mass indexer will be able to access
+your database automatically without any special configuration.
+
+If you want to use multiple persistence unit,
+you will have to register those as beans in the CDI context.
+Note that entity manager factories may not be considered as beans by default,
+in which case you will have to register them yourself.
+You may use an application-scoped bean to do so:
+
 ====
 [source, JAVA]
 ----
-builder = builder.isJavaSE( true )
-        .entityManagerFactory( emf );
+@ApplicationScoped
+public class EntityManagerFactoriesProducer {
+	
+	@PersistenceUnit(unitName = "db1")
+	private EntityManagerFactory db1Factory;
+	
+	@PersistenceUnit(unitName = "db2")
+	private EntityManagerFactory db2Factory;
+	
+	@Produces
+	@Singleton
+	@Named("db1") // The name to use when referencing the bean
+	public EntityManagerFactory createEntityManagerFactoryForDb1() {
+		return db1Factory;
+	}
+	
+	@Produces
+	@Singleton
+	@Named("db2") // The name to use when referencing the bean
+	public EntityManagerFactory createEntityManagerFactoryForDb2() {
+		return db2Factory;
+	}
+}
 ----
 ====
 
+Once the entity manager factories are registered in the CDI context,
+you can instruct the mass indexer to use one in particular by naming it
+using the `entityManagerReference` parameter.
+
 [NOTE]
 ====
-Please make sure that the entity manager factory provided is opened and won’t be
-closed during the mass indexing process.
+Due to limitations of the CDI APIs, it is not currently possible to reference
+an entity manager factory by its persistence unit name when using the mass indexer with CDI.
 ====
-
