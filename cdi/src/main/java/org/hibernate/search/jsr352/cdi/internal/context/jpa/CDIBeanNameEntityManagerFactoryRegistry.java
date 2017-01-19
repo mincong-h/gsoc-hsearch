@@ -12,8 +12,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceUnit;
 
+import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
 
 /**
@@ -28,20 +28,35 @@ import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
 @Singleton
 public class CDIBeanNameEntityManagerFactoryRegistry implements EntityManagerFactoryRegistry {
 
-	@PersistenceUnit
-	private EntityManagerFactory defaultInstance;
-
 	@Inject
-	private Instance<EntityManagerFactory> namedInstance;
+	private Instance<EntityManagerFactory> entityManagerFactoryInstance;
 
 	@Override
 	public EntityManagerFactory getDefault() {
-		return defaultInstance;
+		if ( entityManagerFactoryInstance.isUnsatisfied() ) {
+			throw new SearchException( "No entity manager factory available in the CDI context."
+					+ " Make sure your entity manager factory is a named bean." );
+		}
+		else if ( entityManagerFactoryInstance.isAmbiguous() ) {
+			throw new SearchException( "Multiple entity manager factories have been registered."
+					+ " Please provide the bean name for the selected entity manager factory to the batch indexing job through"
+					+ " the 'entityManagerFactoryReference' parameter." );
+		}
+		else {
+			return entityManagerFactoryInstance.get();
+		}
 	}
 
 	@Override
 	public EntityManagerFactory get(String reference) {
-		return namedInstance.select( new NamedQualifier( reference ) ).get();
+		Instance<EntityManagerFactory> instance = entityManagerFactoryInstance.select( new NamedQualifier( reference ) );
+		if ( instance.isUnsatisfied() ) {
+			throw new SearchException( "No entity manager factory available in the CDI context with this bean name: '" + reference +"'."
+					+ " Make sure your entity manager factory is a named bean." );
+		}
+		else {
+			return instance.get();
+		}
 	}
 
 	private static class NamedQualifier extends AnnotationLiteral<Named> implements Named {
