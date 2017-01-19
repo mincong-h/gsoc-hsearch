@@ -12,8 +12,10 @@ container will be used. For Java SE users, we’ve chosen JBeret SE for you.
 .How to use the new MassIndexer?
 ====
 [source, JAVA]
+----
 Long executionID = BatchIndexingJob.forEntity( MyEntity.class )
         .start();
+----
 ====
 
 This approach is optimized for best performance but requires to set the
@@ -29,8 +31,10 @@ which allows you to add one or multiple class types.
 .How to add entity type(s) to selection?
 ====
 [source, JAVA]
+----
 BatchIndexingJob.Builder builder1 = BatchIndexingJob.forEntity( Company.class );
 BatchIndexingJob.Builder builder2 = BatchIndexingJob.forEntities( Company.class, Employee.class );
+----
 ====
 
 [NOTE]
@@ -60,7 +64,9 @@ value.
 
 ====
 [source, JAVA]
+----
 builder = builder.maxThreads( 5 );
+----
 ====
 
 [NOTE]
@@ -78,7 +84,9 @@ division.
 
 ====
 [source, JAVA]
+----
 builder = builder.rowsPerPartition( 5000 );
+----
 ====
 
 Each partition deals with one root entity type, so 2 different entity types will
@@ -93,7 +101,9 @@ requirement. By default, it is set to 3.
 
 ====
 [source, JAVA]
+----
 builder = builder.checkpointFreq( 1000 );
+----
 ====
 
 Checkpoint a partition-scope algorithm, which means each partition has its own
@@ -117,8 +127,10 @@ related method.
 .Additional configuration in Java SE
 ====
 [source, JAVA]
+----
 builder = builder.isJavaSE( true )
         .entityManagerFactory( emf );
+----
 ====
 
 [NOTE]
