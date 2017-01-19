@@ -7,13 +7,16 @@
 package org.hibernate.search.jsr352.cdi.internal.context.jpa;
 
 import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.Vetoed;
 import javax.enterprise.inject.spi.AnnotatedType;
 import javax.enterprise.inject.spi.Bean;
 import javax.enterprise.inject.spi.BeanAttributes;
 import javax.enterprise.inject.spi.BeanManager;
 import javax.enterprise.inject.spi.InjectionTargetFactory;
+import javax.enterprise.util.AnnotationLiteral;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceUnit;
@@ -23,12 +26,48 @@ import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
 
 /**
  * An {@link EntityManagerFactoryRegistry} that retrieves the entity manager factory
- * from the CDI context by using a @PersistenceUnit annotation, thereby not requiring
- * any special configuration from the user (on contrary to {@link CDIBeanNameEntityManagerFactoryRegistry}.
+ * from the CDI context by its bean name.
  * <p>
- * <strong>CAUTION:</strong>Calling {@link #get(String)} is not supported, because CDI
- * does not offer any API allowing to retrieve an EntityManagerFactory by its persistence
- * unit name dynamically.
+ * When calling {@link #getDefault()}, the single registered EntityManagerFactory bean
+ * will be returned, or if there is none the entity manager factory will be retrieved
+ * using a {@literal @PersistenceUnit annotation}.
+ * <p>
+ * When calling {@link #get(String)} or {@link #get(String, String)}, the reference
+ * will be interpreted as a {@link Named} qualifier.
+ * <p>
+ * <strong>Caution:</strong> {@link EntityManagerFactory} are not considered as beans per
+ * default, and thus can't be retrieved without a specific user configuration. In order
+ * for retrieval by name to work, users should have producer methods expose the entity manager
+ * factories in their context, for instance like this:
+ *
+ * <pre>
+&#064;ApplicationScoped
+public class EntityManagerFactoriesProducer {
+
+	&#064;PersistenceUnit(unitName = "db1")
+	private EntityManagerFactory db1Factory;
+
+	&#064;PersistenceUnit(unitName = "db2")
+	private EntityManagerFactory db2Factory;
+
+	&#064;Produces
+	&#064;Singleton
+	&#064;Named("db1") // The name to use when referencing the bean
+	public EntityManagerFactory createEntityManagerFactoryForDb1() {
+		return db1Factory;
+	}
+
+	&#064;Produces
+	&#064;Singleton
+	&#064;Named("db2") // The name to use when referencing the bean
+	public EntityManagerFactory createEntityManagerFactoryForDb2() {
+		return db2Factory;
+	}
+}
+ * </pre>
+ * <p>
+ * Note that retrieving an EntityManagerFactory by its persistence unit name is not
+ * supported, because CDI does not offer any API allowing to achieve it dynamically.
  * Indeed:
  * <ul>
  * <li>{@literal @PersistenceUnit} is not a qualifier annotation, so the usual CDI
@@ -42,31 +81,62 @@ import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
  * @author Yoann Rodiere
  */
 @Singleton
-@ByPersistenceUnitName
-public class CDIPersistenceUnitNameEntityManagerFactoryRegistry implements EntityManagerFactoryRegistry {
+public class CDIEntityManagerFactoryRegistry implements EntityManagerFactoryRegistry {
+
+	private static final String CDI_SCOPE_NAME = "cdi";
+
+	@Inject
+	private Instance<EntityManagerFactory> entityManagerFactoryInstance;
 
 	@Inject
 	private BeanManager beanManager;
 
 	@Override
 	public EntityManagerFactory getDefault() {
-		try {
-			return getVetoedBeanReference( beanManager, PersistenceUnitAccessor.class ).entityManagerFactory;
+		if ( entityManagerFactoryInstance.isUnsatisfied() ) {
+			try {
+				return getVetoedBeanReference( beanManager, PersistenceUnitAccessor.class ).entityManagerFactory;
+			}
+			catch (RuntimeException e) {
+				throw new SearchException( "Exception while retrieving the EntityManagerFactory using @PersistenceUnit."
+						+ " This generally happens either because the persistence wasn't configured properly"
+						+ " or because there are multiple persistence units." );
+			}
 		}
-		catch (RuntimeException e) {
-			throw new SearchException( "Exception while retrieving the EntityManagerFactory using @PersistenceUnit."
-					+ " This generally happens either because the persistence wasn't configured properly"
-					+ " or because there are multiple persistence units." );
+		else if ( entityManagerFactoryInstance.isAmbiguous() ) {
+			throw new SearchException( "Multiple entity manager factories have been registered in the CDI context."
+					+ " Please provide the bean name for the selected entity manager factory to the batch indexing job through"
+					+ " the 'entityManagerFactoryReference' parameter." );
+		}
+		else {
+			return entityManagerFactoryInstance.get();
 		}
 	}
 
 	@Override
 	public EntityManagerFactory get(String reference) {
-		throw new SearchException( "Cannot retrieve the entity manager factory from the CDI context using a"
-				+ " persistence unit name: CDI does not expose the necessary APIs to do that."
-				+ " Please do not provide the persistence unit name (if there is only one persistence unit)"
-				+ " or select a different scope using the 'entityManagerFactoryScope' job parameter (if"
-				+ " there are multiple persistence units)." );
+		return get( CDI_SCOPE_NAME, reference );
+	}
+
+	@Override
+	public EntityManagerFactory get(String scopeName, String reference) {
+		EntityManagerFactory factory;
+
+		switch ( scopeName ) {
+			case CDI_SCOPE_NAME:
+				Instance<EntityManagerFactory> instance = entityManagerFactoryInstance.select( new NamedQualifier( reference ) );
+				if ( instance.isUnsatisfied() ) {
+					throw new SearchException( "No entity manager factory available in the CDI context with this bean name: '" + reference +"'."
+							+ " Make sure your entity manager factory is a named bean." );
+				}
+				factory = instance.get();
+				break;
+			default:
+				throw new SearchException( "Unknown entity manager factory scope: '" + scopeName + "'."
+						+ " Please use a supported scope." );
+		}
+
+		return factory;
 	}
 
 	/**
@@ -109,6 +179,20 @@ public class CDIPersistenceUnitNameEntityManagerFactoryRegistry implements Entit
 	private static class PersistenceUnitAccessor {
 		@PersistenceUnit
 		private EntityManagerFactory entityManagerFactory;
+	}
+
+	private static class NamedQualifier extends AnnotationLiteral<Named> implements Named {
+		private final String name;
+
+		public NamedQualifier(String name) {
+			super();
+			this.name = name;
+		}
+
+		@Override
+		public String value() {
+			return name;
+		}
 	}
 
 }

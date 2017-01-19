@@ -92,7 +92,6 @@ public class MultipleEntityManagerFactoryBeansIT {
 
 		// The 1st execution. Keep it alive and wait Byteman to stop it
 		long execId1 = BatchIndexingJob.forEntity( Message.class )
-				.entityManagerFactoryScope( "bean-name" )
 				.entityManagerFactoryReference( ENTITY_MANAGER_FACTORY_BEAN_NAME )
 				.start();
 		JobExecution jobExec1 = jobOperator.getJobExecution( execId1 );

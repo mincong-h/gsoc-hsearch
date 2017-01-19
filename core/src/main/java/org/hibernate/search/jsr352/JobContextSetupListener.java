@@ -24,8 +24,7 @@ import org.hibernate.criterion.Criterion;
 import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jpa.Search;
 import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
-import org.hibernate.search.jsr352.context.jpa.internal.SessionFactoryNameRegistry;
-import org.hibernate.search.jsr352.context.jpa.internal.SessionFactoryPersistenceUnitNameRegistry;
+import org.hibernate.search.jsr352.context.jpa.internal.ActiveSessionFactoryRegistry;
 import org.hibernate.search.jsr352.internal.JobContextData;
 import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
 import org.hibernate.search.util.StringHelper;
@@ -39,9 +38,6 @@ import org.jboss.logging.Logger;
 public class JobContextSetupListener extends AbstractJobListener {
 
 	private static final Logger LOGGER = Logger.getLogger( JobContextSetupListener.class );
-
-	private static final String PERSISTENCE_UNIT_NAME_SCOPE_NAME = "persistence-unit-name";
-	private static final String SESSION_FACTORY_NAME_SCOPE_NAME = "session-factory-name";
 
 	@Inject
 	private JobContext jobContext;
@@ -70,38 +66,44 @@ public class JobContextSetupListener extends AbstractJobListener {
 	/**
 	 * Method to be overridden to retrieve the entity manager factory by different means (CDI, Spring DI, ...).
 	 *
-	 * @param scopeName The scope chosen in the job parameters. This allows to pick a specific registry.
 	 * @return The entity manager factory registry used to convert the entity manager factory reference to an actual instance.
 	 */
-	protected EntityManagerFactoryRegistry getEntityManagerFactoryRegistry(String scopeName) {
-		if ( StringHelper.isEmpty( scopeName ) || PERSISTENCE_UNIT_NAME_SCOPE_NAME.equals( scopeName ) ) {
-			return SessionFactoryPersistenceUnitNameRegistry.getInstance();
-		}
-		else if ( SESSION_FACTORY_NAME_SCOPE_NAME.equals( scopeName ) ) {
-			return SessionFactoryNameRegistry.getInstance();
+	protected EntityManagerFactoryRegistry getEntityManagerFactoryRegistry() {
+		return ActiveSessionFactoryRegistry.getInstance();
+	}
+
+	private EntityManagerFactory getEntityManagerFactory() {
+		EntityManagerFactoryRegistry registry = getEntityManagerFactoryRegistry();
+
+		if ( StringHelper.isEmpty( entityManagerFactoryScope ) ) {
+			if ( StringHelper.isEmpty( entityManagerFactoryReference ) ) {
+				return registry.getDefault();
+			}
+			else {
+				return registry.get( entityManagerFactoryReference );
+			}
 		}
 		else {
-			throw new SearchException( "Unknown entity manager factory registry: '" + scopeName + "'."
-					+ " Please use the name of a supported registry." );
+			if ( StringHelper.isEmpty( entityManagerFactoryReference ) ) {
+				throw new SearchException( "An 'entityManagerFactoryScope' was defined, but"
+						+ " the 'entityManagerFactoryReference' parameter is empty."
+						+ " Please also set the 'entityManagerFactoryReference' parameter to"
+						+ " select an entity manager factory, or do not set the"
+						+ " 'entityManagerFactoryScope' to try to use a default entity manager factory." );
+			}
+			else {
+				return registry.get( entityManagerFactoryScope, entityManagerFactoryReference );
+			}
 		}
 	}
 
 	private void setUpContext() throws ClassNotFoundException, IOException {
+		EntityManagerFactory emf = getEntityManagerFactory();
 		EntityManager em = null;
 
 		try {
 			LOGGER.debug( "Creating entity manager ..." );
 
-			EntityManagerFactoryRegistry entityManagerFactoryProvider =
-					getEntityManagerFactoryRegistry( entityManagerFactoryScope );
-
-			EntityManagerFactory emf;
-			if ( StringHelper.isEmpty( entityManagerFactoryReference ) ) {
-				emf = entityManagerFactoryProvider.getDefault();
-			}
-			else {
-				emf = entityManagerFactoryProvider.get( entityManagerFactoryReference );
-			}
 			em = emf.createEntityManager();
 			List<String> entityNamesToIndex = Arrays.asList( rootEntities.split( "," ) );
 			Set<Class<?>> entityTypesToIndex = Search

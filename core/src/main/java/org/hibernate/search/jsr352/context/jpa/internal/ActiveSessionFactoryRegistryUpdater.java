@@ -6,9 +6,6 @@
  */
 package org.hibernate.search.jsr352.context.jpa.internal;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.hibernate.boot.Metadata;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.hibernate.integrator.spi.Integrator;
@@ -17,27 +14,16 @@ import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 /**
  * @author Yoann Rodiere
  */
-public class SessionFactoryRegistryUpdater implements Integrator {
-
-	private final List<MutableSessionFactoryRegistry> registries = new ArrayList<>();
-
-	public SessionFactoryRegistryUpdater() {
-		registries.add( SessionFactoryNameRegistry.getInstance() );
-		registries.add( SessionFactoryPersistenceUnitNameRegistry.getInstance() );
-	}
+public class ActiveSessionFactoryRegistryUpdater implements Integrator {
 
 	@Override
 	public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactory, SessionFactoryServiceRegistry serviceRegistry) {
-		for ( MutableSessionFactoryRegistry registry : registries ) {
-			registry.register( sessionFactory );
-		}
+		ActiveSessionFactoryRegistry.getInstance().register( sessionFactory );
 	}
 
 	@Override
 	public void disintegrate(SessionFactoryImplementor sessionFactory, SessionFactoryServiceRegistry serviceRegistry) {
-		for ( MutableSessionFactoryRegistry registry : registries ) {
-			registry.unregister( sessionFactory );
-		}
+		ActiveSessionFactoryRegistry.getInstance().unregister( sessionFactory );
 	}
 
 }
