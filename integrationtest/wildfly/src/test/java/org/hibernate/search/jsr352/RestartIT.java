@@ -25,7 +25,6 @@ import javax.persistence.PersistenceUnit;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.search.jsr352.test.common.Message;
 import org.hibernate.search.jsr352.test.common.MessageManager;
-import org.hibernate.search.jsr352.test.config.SingleEntityManagerFactoryProducer;
 import org.hibernate.search.jsr352.test.util.JobInterruptorUtil;
 import org.hibernate.search.jsr352.test.util.JobTestUtil;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -72,8 +71,7 @@ public class RestartIT {
 				.addAsWebInfResource( EmptyAsset.INSTANCE, "beans.xml" )
 				.addPackage( JobTestUtil.class.getPackage() )
 				.addPackage( JobInterruptorUtil.class.getPackage() )
-				.addPackage( Message.class.getPackage() )
-				.addClass( SingleEntityManagerFactoryProducer.class );
+				.addPackage( Message.class.getPackage() );
 		return war;
 	}
 

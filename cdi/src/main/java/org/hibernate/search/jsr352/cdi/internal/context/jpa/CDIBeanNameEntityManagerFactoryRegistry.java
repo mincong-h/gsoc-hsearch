@@ -18,14 +18,46 @@ import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
 
 /**
  * An {@link EntityManagerFactoryRegistry} that retrieves the entity manager factory
- * from the CDI context.
+ * from the CDI context by its bean name.
  * <p>
  * When calling {@link #get(String)}, the reference will be interpreted as a
- * {@link Named} qualfier.
+ * {@link Named} qualifier.
+ * <p>
+ * <strong>Caution:</strong> {@link EntityManagerFactory} are not considered as beans per
+ * default, and thus can't be retrieved without a specific user configuration. In order
+ * for this registry to work, users should have producer methods expose the entity manager
+ * factories in their context, for instance like this:
+ *
+ * <pre>
+&#064;ApplicationScoped
+public class EntityManagerFactoriesProducer {
+
+	&#064;PersistenceUnit(unitName = "db1")
+	private EntityManagerFactory db1Factory;
+
+	&#064;PersistenceUnit(unitName = "db2")
+	private EntityManagerFactory db2Factory;
+
+	&#064;Produces
+	&#064;Singleton
+	&#064;Named("db1") // The name to use when referencing the bean
+	public EntityManagerFactory createEntityManagerFactoryForDb1() {
+		return db1Factory;
+	}
+
+	&#064;Produces
+	&#064;Singleton
+	&#064;Named("db2") // The name to use when referencing the bean
+	public EntityManagerFactory createEntityManagerFactoryForDb2() {
+		return db2Factory;
+	}
+}
+ * </pre>
  *
  * @author Yoann Rodiere
  */
 @Singleton
+@ByBeanName
 public class CDIBeanNameEntityManagerFactoryRegistry implements EntityManagerFactoryRegistry {
 
 	@Inject
