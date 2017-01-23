@@ -32,6 +32,12 @@ import org.jboss.logging.Logger;
 
 /**
  * Listener before the start of the job. It aims to setup the job context data, shared by all the steps.
+ * <p>
+ * This is the default implementation, meant to be overridden (mainly its
+ * {@link #getEntityManagerFactoryRegistry()} method) when one needs to retrieve the entity manager
+ * factories differently.
+ * This default implementation uses an {@link ActiveSessionFactoryRegistry}, which has
+ * some limitations (see its javadoc).
  *
  * @author Mincong Huang
  */

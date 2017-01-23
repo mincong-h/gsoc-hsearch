@@ -13,7 +13,21 @@ import org.hibernate.search.jsr352.JobContextSetupListener;
 import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
 
 /**
+ * Override of JobContextSetupListener retrieving entity manager factories
+ * from a CDI context.
+ * <p>
+ * The only purpose of this class is to override the entity manager factory
+ * registry.
+ *
  * @author Yoann Rodiere
+ */
+/*
+ * When a CDI-enabled JSR-352 implementation (like JBeret) resolves a reference,
+ * it will *first* look for CDI bean with this name, and will only try to
+ * interpret the reference as a fully-qualified class name if no CDI bean is found.
+ *
+ * Thus, when using a CDI-enabled JSR-352 implementation, naming the CDI bean this
+ * way will make it override the original implementation.
  */
 @Named("org.hibernate.search.jsr352.JobContextSetupListener")
 public class CDIJobContextSetupListener extends JobContextSetupListener {

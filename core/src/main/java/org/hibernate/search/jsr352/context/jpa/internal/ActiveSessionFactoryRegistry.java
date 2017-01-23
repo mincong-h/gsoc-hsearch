@@ -20,7 +20,16 @@ import org.hibernate.search.exception.SearchException;
 
 /**
  * A registry containing all the currently active (non-closed) session factories
- * using the same classloader.
+ * that use the same classloader.
+ * <p>
+ * This implementation has the advantage of not relying on external frameworks
+ * (like a dependency injection framework), but has two downsides:
+ * <ul>
+ * <li>Session factories cannot be instantiated on demand: they must
+ * be created <strong>before</strong> being retrieved from the registry.
+ * <li>Only session factories created from the same classloader are
+ * visible in the registry.
+ * </ul>
  *
  * @author Yoann Rodiere
  */

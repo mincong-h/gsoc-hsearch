@@ -175,6 +175,9 @@ public class CDIEntityManagerFactoryRegistry implements EntityManagerFactoryRegi
 		return vetoedType.cast( beanManager.getReference( bean, vetoedType, creationalContext ) );
 	}
 
+	/**
+	 * @see CDIEntityManagerFactoryRegistry#getVetoedBeanReference(BeanManager, Class)
+	 */
 	@Vetoed
 	private static class PersistenceUnitAccessor {
 		@PersistenceUnit
