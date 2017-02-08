@@ -17,7 +17,7 @@ return
 ENDRULE
 
 RULE Create count-down before the step partitioning
-CLASS org.hibernate.search.jsr352.internal.steps.lucene.PartitionMapper
+CLASS org.hibernate.search.jsr352.impl.steps.lucene.PartitionMapper
 METHOD mapPartitions
 AT EXIT
 IF flagged("job-interruptor-enabled")
@@ -25,7 +25,7 @@ DO createCountDown("beforeRestart", 2500)
 ENDRULE
 
 RULE Count down for each item read, interrupt the job when counter is 0
-CLASS org.hibernate.search.jsr352.internal.steps.lucene.EntityReader
+CLASS org.hibernate.search.jsr352.impl.steps.lucene.EntityReader
 METHOD readItem
 AT ENTRY
 IF flagged("job-interruptor-enabled")

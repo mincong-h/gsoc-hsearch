@@ -16,7 +16,7 @@ import javax.batch.operations.JobOperator;
 import javax.batch.runtime.BatchRuntime;
 
 import org.hibernate.criterion.Criterion;
-import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
+import org.hibernate.search.jsr352.impl.util.MassIndexerUtil;
 
 /**
  * An alternative to the current mass indexer, using the Java Batch architecture as defined by JSR 352.
@@ -104,7 +104,7 @@ public class BatchIndexingJob {
 
 		/**
 		 * Whether the Hibernate queries are cacheable. This setting will be applied to
-		 * {@link org.hibernate.search.jsr352.internal.steps.lucene.EntityReader} . The default value is false. Set it
+		 * {@link org.hibernate.search.jsr352.impl.steps.lucene.EntityReader} . The default value is false. Set it
 		 * to true when reading a complex graph with relations.
 		 *
 		 * @param cacheable

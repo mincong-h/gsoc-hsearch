@@ -39,8 +39,21 @@ import org.junit.runner.RunWith;
  */
 @RunWith(org.jboss.byteman.contrib.bmunit.BMUnitRunner.class)
 @BMRules(rules = {
-		@BMRule(name = "Create count-down before the step partitioning", targetClass = "org.hibernate.search.jsr352.internal.steps.lucene.PartitionMapper", targetMethod = "mapPartitions", targetLocation = "AT EXIT", action = "createCountDown(\"beforeRestart\", 100)"),
-		@BMRule(name = "Count down for each item read, interrupt the job when counter is 0", targetClass = "org.hibernate.search.jsr352.internal.steps.lucene.EntityReader", targetMethod = "readItem", targetLocation = "AT ENTRY", condition = "countDown(\"beforeRestart\")", action = "throw new java.lang.InterruptedException(\"Job is interrupted by Byteman.\")")
+		@BMRule(
+				name = "Create count-down before the step partitioning",
+				targetClass = "org.hibernate.search.jsr352.impl.steps.lucene.PartitionMapper",
+				targetMethod = "mapPartitions",
+				targetLocation = "AT EXIT",
+				action = "createCountDown(\"beforeRestart\", 100)"
+		),
+		@BMRule(
+				name = "Count down for each item read, interrupt the job when counter is 0",
+				targetClass = "org.hibernate.search.jsr352.impl.steps.lucene.EntityReader",
+				targetMethod = "readItem",
+				targetLocation = "AT ENTRY",
+				condition = "countDown(\"beforeRestart\")",
+				action = "throw new java.lang.InterruptedException(\"Job is interrupted by Byteman.\")"
+		)
 })
 public class RestartChunkIT {
 

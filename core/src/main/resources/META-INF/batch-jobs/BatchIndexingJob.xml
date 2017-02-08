@@ -27,7 +27,7 @@
     </listeners>
 
     <step id="beforeChunk" next="produceLuceneDoc">
-        <batchlet ref="org.hibernate.search.jsr352.internal.steps.beforeChunk.BeforeChunkBatchlet">
+        <batchlet ref="org.hibernate.search.jsr352.impl.steps.beforechunk.BeforeChunkBatchlet">
             <properties>
                 <property name="optimizeAfterPurge" value="#{jobParameters['optimizeAfterPurge']}" />
                 <property name="purgeAtStart" value="#{jobParameters['purgeAtStart']}" />
@@ -37,14 +37,14 @@
 
     <step id="produceLuceneDoc" next="afterChunk">
         <listeners>
-            <listener ref="org.hibernate.search.jsr352.internal.steps.lucene.StepProgressSetupListener">
+            <listener ref="org.hibernate.search.jsr352.impl.steps.lucene.StepProgressSetupListener">
                 <properties>
                     <property name="isJavaSE" value="#{jobParameters['isJavaSE']}" />
                 </properties>
             </listener>
         </listeners>
         <chunk checkpoint-policy="custom">
-            <reader ref="org.hibernate.search.jsr352.internal.steps.lucene.EntityReader">
+            <reader ref="org.hibernate.search.jsr352.impl.steps.lucene.EntityReader">
                 <properties>
                     <property name="entityName" value="#{partitionPlan['entityName']}" />
                     <property name="partitionId" value="#{partitionPlan['partitionId']}" />
@@ -55,26 +55,26 @@
                     <property name="maxResults" value="#{jobParameters['maxResults']}?:10000000;" />
                 </properties>
             </reader>
-            <processor ref="org.hibernate.search.jsr352.internal.steps.lucene.LuceneDocProducer">
+            <processor ref="org.hibernate.search.jsr352.impl.steps.lucene.LuceneDocProducer">
                 <properties>
                     <property name="entityName" value="#{partitionPlan['entityName']}" />
                     <property name="isJavaSE" value="#{jobParameters['isJavaSE']}?:false;" />
                 </properties>
             </processor>
-            <writer ref="org.hibernate.search.jsr352.internal.steps.lucene.LuceneDocWriter">
+            <writer ref="org.hibernate.search.jsr352.impl.steps.lucene.LuceneDocWriter">
                 <properties>
                     <property name="entityName" value="#{partitionPlan['entityName']}" />
                     <property name="isJavaSE" value="#{jobParameters['isJavaSE']}?:false;" />
                 </properties>
             </writer>
-            <checkpoint-algorithm ref="org.hibernate.search.jsr352.internal.steps.lucene.CheckpointAlgorithm">
+            <checkpoint-algorithm ref="org.hibernate.search.jsr352.impl.steps.lucene.CheckpointAlgorithm">
                 <properties>
                     <property name="itemCount" value="#{jobParameters['itemCount']}?:200;" />
                 </properties>
             </checkpoint-algorithm>
         </chunk>
         <partition>
-            <mapper ref="org.hibernate.search.jsr352.internal.steps.lucene.PartitionMapper">
+            <mapper ref="org.hibernate.search.jsr352.impl.steps.lucene.PartitionMapper">
                 <properties>
                     <property name="fetchSize" value="#{jobParameters['fetchSize']}?:200000;" />
                     <property name="hql" value="#{jobParameters['hql']}" />
@@ -83,13 +83,13 @@
                     <property name="rowsPerPartition" value="#{jobParameters['rowsPerPartition']}?:0;" />
                 </properties>
             </mapper>
-            <collector ref="org.hibernate.search.jsr352.internal.steps.lucene.ProgressCollector" />
-            <analyzer ref="org.hibernate.search.jsr352.internal.steps.lucene.ProgressAggregator" />
+            <collector ref="org.hibernate.search.jsr352.impl.steps.lucene.ProgressCollector" />
+            <analyzer ref="org.hibernate.search.jsr352.impl.steps.lucene.ProgressAggregator" />
         </partition>
     </step>
 
     <step id="afterChunk">
-        <batchlet ref="org.hibernate.search.jsr352.internal.steps.afterChunk.AfterChunkBatchlet">
+        <batchlet ref="org.hibernate.search.jsr352.impl.steps.afterchunk.AfterChunkBatchlet">
             <properties>
                 <property name="optimizeAtEnd" value="#{jobParameters['optimizeAtEnd']}" />
             </properties>

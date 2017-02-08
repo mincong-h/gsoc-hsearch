@@ -24,9 +24,9 @@ import org.hibernate.criterion.Criterion;
 import org.hibernate.search.exception.SearchException;
 import org.hibernate.search.jpa.Search;
 import org.hibernate.search.jsr352.context.jpa.EntityManagerFactoryRegistry;
-import org.hibernate.search.jsr352.context.jpa.internal.ActiveSessionFactoryRegistry;
-import org.hibernate.search.jsr352.internal.JobContextData;
-import org.hibernate.search.jsr352.internal.util.MassIndexerUtil;
+import org.hibernate.search.jsr352.context.jpa.impl.ActiveSessionFactoryRegistry;
+import org.hibernate.search.jsr352.impl.JobContextData;
+import org.hibernate.search.jsr352.impl.util.MassIndexerUtil;
 import org.hibernate.search.util.StringHelper;
 import org.jboss.logging.Logger;
 
