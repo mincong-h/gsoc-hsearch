@@ -177,7 +177,7 @@ public class EntityReader extends AbstractItemReader {
 
 		final int partitionId = Integer.parseInt( partitionIdStr );
 
-		LOGGER.debugf( "[partitionId=%d] open reader for entity %s ...", partitionId, entityName );
+		LOGGER.debugf( "[partitionId=%d] open reader for entity %s ...", (Integer) partitionId, entityName );
 		JobContextData jobData = (JobContextData) jobContext.getTransientUserData();
 		entityType = jobData.getIndexedType( entityName );
 		PartitionBound bound = jobData.getPartitionBound( partitionId );

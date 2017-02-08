@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -77,7 +78,7 @@ public class JobContextData {
 	public Class<?> getIndexedType(String entityName) throws ClassNotFoundException {
 		Class<?> entityType = entityTypeMap.get( entityName );
 		if ( entityType == null ) {
-			String msg = String.format( "entityName %s not found.", entityName );
+			String msg = String.format( Locale.ROOT, "entityName %s not found.", entityName );
 			throw new ClassNotFoundException( msg );
 		}
 		return entityType;

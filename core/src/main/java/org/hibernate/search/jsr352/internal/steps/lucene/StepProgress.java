@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
@@ -121,7 +122,9 @@ public class StepProgress implements Serializable {
 	public Iterable<String> getProgresses() {
 		List<String> results = new LinkedList<>();
 		for ( String entity : entityTotal.keySet() ) {
-			String msg = String.format( "%s: %d/%d works processed (%.2f%%).",
+			String msg = String.format(
+					Locale.ROOT,
+					"%s: %d/%d works processed (%.2f%%).",
 					entity,
 					entityProgress.get( entity ),
 					entityTotal.get( entity ),

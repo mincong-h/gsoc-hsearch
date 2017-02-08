@@ -34,10 +34,11 @@ public class Person {
 	}
 
 	public Person(int id, String firstName, String familyName) {
-		this.id = String.format( "%c%c%d",
-				firstName.charAt( 0 ),
-				familyName.charAt( 0 ),
-				id );
+		this.id = new StringBuilder()
+				.append( firstName, 0, 1 )
+				.append( familyName, 0, 1 )
+				.append( id )
+				.toString();
 		this.firstName = firstName;
 		this.familyName = familyName;
 	}

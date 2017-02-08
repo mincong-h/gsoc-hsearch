@@ -13,6 +13,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 
 import javax.batch.operations.JobOperator;
 import javax.batch.runtime.BatchRuntime;
@@ -51,7 +52,7 @@ public class RestartIT {
 
 	private static final int JOB_TIMEOUT_MS = 40_000;
 
-	private static final SimpleDateFormat SDF = new SimpleDateFormat( "dd/MM/yyyy" );
+	private static final SimpleDateFormat SDF = new SimpleDateFormat( "dd/MM/yyyy", Locale.ROOT );
 	private static final int DB_DAY1_ROWS = 2000;
 	private static final int DB_DAY2_ROWS = 3000;
 

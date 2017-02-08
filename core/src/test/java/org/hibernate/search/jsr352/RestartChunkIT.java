@@ -10,6 +10,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Locale;
 
 import javax.batch.operations.JobOperator;
 import javax.batch.runtime.BatchStatus;
@@ -75,7 +76,7 @@ public class RestartChunkIT {
 		for ( int i = 0; i < DB_PERS_ROWS; i++ ) {
 			String firstName = str[i % 5][1];
 			String lastName = str[i % 5][2];
-			String id = String.format( "%2d%c", i, firstName.charAt( 0 ) );
+			String id = String.format( Locale.ROOT, "%2d%c", i, firstName.charAt( 0 ) );
 			em.persist( new Person( id, firstName, lastName ) );
 		}
 		em.getTransaction().commit();
