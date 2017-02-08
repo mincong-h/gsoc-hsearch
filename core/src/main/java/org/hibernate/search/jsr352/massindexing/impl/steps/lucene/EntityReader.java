@@ -215,7 +215,6 @@ public class EntityReader extends AbstractItemReader {
 	}
 
 	private ScrollableResults buildScrollUsingHQL(StatelessSession ss, String HQL) {
-
 		return ss.createQuery( HQL )
 				.setReadOnly( true )
 				.setCacheable( Boolean.parseBoolean( cacheable ) )
@@ -226,7 +225,6 @@ public class EntityReader extends AbstractItemReader {
 
 	private ScrollableResults buildScrollUsingCriteria(StatelessSession ss,
 			PartitionBound unit, Object checkpointId, JobContextData jobData) {
-
 		String idName = sessionFactory.getClassMetadata( entityType )
 				.getIdentifierPropertyName();
 

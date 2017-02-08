@@ -45,9 +45,7 @@ public class BeforeChunkBatchlet extends AbstractBatchlet {
 
 	@Override
 	public String process() throws Exception {
-
 		if ( Boolean.parseBoolean( this.purgeAtStart ) ) {
-
 			JobContextData jobData = (JobContextData) jobContext.getTransientUserData();
 			EntityManagerFactory emf = jobData.getEntityManagerFactory();
 			session = emf.unwrap( SessionFactory.class ).openSession();

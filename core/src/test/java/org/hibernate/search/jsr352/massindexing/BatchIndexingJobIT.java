@@ -262,7 +262,6 @@ public class BatchIndexingJobIT {
 	private void testBatchStatus(StepExecution stepExecution) {
 		BatchStatus batchStatus = stepExecution.getBatchStatus();
 		switch ( stepExecution.getStepName() ) {
-
 			case "produceLuceneDoc":
 				for ( Metric m : stepExecution.getMetrics() ) {
 					if ( m.getType().equals( MetricType.READ_COUNT ) ) {

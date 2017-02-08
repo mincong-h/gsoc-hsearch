@@ -34,7 +34,6 @@ public class Company implements Serializable {
 	private String name;
 
 	Company() {
-
 	}
 
 	public Company(String name) {

@@ -99,7 +99,6 @@ public class LuceneDocProducer implements ItemProcessor {
 	 * @return an addLuceneWork
 	 */
 	private AddLuceneWork buildAddLuceneWork(Object entity, Class<?> entityType) {
-
 		// TODO: tenant ID should not be null
 		// Or may it be fine to be null? Gunnar's integration test in Hibernate
 		// Search: MassIndexingTimeoutIT does not mention the tenant ID neither

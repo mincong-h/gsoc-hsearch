@@ -185,7 +185,6 @@ public class PartitionMapper implements javax.batch.api.partition.PartitionMappe
 	}
 
 	private List<PartitionBound> buildPartitionUnitsFrom(ScrollableResults scroll, Class<?> clazz) {
-
 		List<PartitionBound> partitionUnits = new ArrayList<>();
 		final int rowsPerPartition = Integer.parseInt( this.rowsPerPartition );
 		Object lowerID = null;
@@ -204,7 +203,6 @@ public class PartitionMapper implements javax.batch.api.partition.PartitionMappe
 
 	private ScrollableResults buildScrollableResults(StatelessSession ss,
 			Session session, Class<?> clazz, Set<Criterion> criterions) {
-
 		Criteria criteria = ss.createCriteria( clazz );
 		if ( criterions != null ) {
 			criterions.forEach( c -> criteria.add( c ) );

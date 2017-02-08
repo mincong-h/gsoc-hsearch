@@ -43,7 +43,6 @@ public class StepProgressSetupListener extends AbstractStepListener {
 	 */
 	@Override
 	public void beforeStep() {
-
 		StepProgress stepProgress = (StepProgress) stepContext.getPersistentUserData();
 
 		if ( stepProgress == null ) {
