@@ -1,10 +1,5 @@
-# This project has moved
-
-It will temporarily be located at https://github.com/yrodiere/hibernate-search/tree/jsr352/jsr352
-and will ultimately be integrated to the Hibernate Search codebase
-at https://github.com/hibernate/hibernate-search/tree/master/jsr352
-
----
+> :warning: **DEPRECATED** This project has been integrated to
+> [Hibernate Search][2], and will not be maintained here anymore.
 
 # gsoc-hsearch
 
@@ -24,3 +19,4 @@ control (start/stop/restart), logging, checkpointing and parallelization.
 ![Workflow of the job "mass-index"][1]
 
 [1]: https://raw.githubusercontent.com/mincong-h/gsoc-hsearch/master/img/mass-index.png
+[2]: https://github.com/hibernate/hibernate-search
